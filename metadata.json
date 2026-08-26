@@ -1,0 +1,6 @@
+{
+  "name": "Healthcare Discharge Instructions Generator",
+  "description": "Human-in-the-loop AI Healthcare Discharge Instructions Generator with multimodal extraction, clinical verification, hybrid 18-category safety audit, and multilingual A4 PDF generation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
