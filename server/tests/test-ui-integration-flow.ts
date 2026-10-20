@@ -495,9 +495,9 @@ Medication: Paracetamol - Take as directed.`;
 
     record(
       15,
-      'Backend Approval Lock Enforcement',
+      'Critical audit identifies blocked state (service check)',
       pass15,
-      `Document status CRITICAL_ISSUE strictly blocks approval (Backend route returns HTTP 403 Forbidden).`
+      'Service result is CRITICAL_ISSUE; actual HTTP approval rejection is covered separately by test-hardening.ts.'
     );
 
     // ----------------------------------------------------
@@ -513,6 +513,7 @@ Medication: Paracetamol - Take as directed.`;
         signatureNote: 'Verified and approved by attending clinician.',
       },
       generatedReport: correctedReport,
+      currentVersion: correctedReport.version,
       auditResult: audit14,
     };
 

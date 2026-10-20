@@ -5,9 +5,11 @@
  * this deterministic test fixture.
  */
 import { DischargeDocument } from '../../../src/types/discharge';
+import { AUDIT_POLICY_VERSION } from '../../audit/deterministicAudit';
 
 export const mockApprovedDoc: DischargeDocument = {
   id: 'doc-test-101',
+  currentVersion: 3,
   patientId: 'CLN-70428',
   approvalStatus: 'APPROVED',
   hospitalInfo: {
@@ -91,6 +93,7 @@ export const mockApprovedDoc: DischargeDocument = {
     },
   },
   auditResult: {
+    policyVersion: AUDIT_POLICY_VERSION,
     auditId: 'aud-1',
     reportVersion: 3,
     auditedAt: new Date().toISOString(),
@@ -106,6 +109,7 @@ export const mockApprovedDoc: DischargeDocument = {
 export const mockCriticalDoc: DischargeDocument = {
   ...mockApprovedDoc,
   auditResult: {
+    policyVersion: AUDIT_POLICY_VERSION,
     auditId: 'aud-2',
     reportVersion: 3,
     auditedAt: new Date().toISOString(),

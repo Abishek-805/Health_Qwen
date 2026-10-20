@@ -17,5 +17,8 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm test
+      - run: npm run evaluate:pipeline
       - run: npm run build
+      - run: npm run test:production
+      - run: npm run test:development
       - run: npm audit --audit-level=low

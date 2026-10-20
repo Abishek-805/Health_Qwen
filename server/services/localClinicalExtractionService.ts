@@ -4,6 +4,8 @@ import fs from 'fs';
 import { getLlama, LlamaModel, LlamaChatSession } from 'node-llama-cpp';
 import { CanonicalDischargeExtraction, ExtractedField } from './clinicalExtractionService.js';
 
+export const LOCAL_EXTRACTION_PROMPT_VERSION = 'local-extraction-v2-additional-notes';
+
 export interface LocalExtractionBenchmarkMetrics {
   device: string;
   vramUsedMb: number;
@@ -59,13 +61,13 @@ async function initializeModel(): Promise<{ llama: any; model: LlamaModel }> {
 
   if (!fs.existsSync(MODEL_PATH)) {
     throw new Error(
-      `Local model file not found at ${MODEL_PATH}. Please run: npx tsx server/scripts/download-model.ts`
+      'Local model file not found. Run npm run download-model.'
     );
   }
 
   if (await sha256File(MODEL_PATH) !== MODEL_SHA256) throw new Error('Local model checksum mismatch. Run npm run download-model.');
   const startLoad = Date.now();
-  console.log(`[QwenEngine] Initializing node-llama-cpp with model ${MODEL_PATH}...`);
+  console.log('[QwenEngine] Initializing pinned local Qwen model...');
 
   try {
     cachedLlama = await getLlama();
@@ -84,7 +86,7 @@ async function initializeModel(): Promise<{ llama: any; model: LlamaModel }> {
     console.log(`[QwenEngine] Model weights loaded in ${modelLoadTimeMs} ms.`);
     return { llama: cachedLlama, model: cachedModel! };
   } catch (err) {
-    console.warn('[QwenEngine] GPU init failed, retrying in CPU mode:', (err as Error).message);
+    console.warn('[QwenEngine] GPU initialization failed; retrying in CPU mode.');
     cachedLlama = await getLlama({ gpu: false });
     cachedModel = await cachedLlama.loadModel({
       modelPath: MODEL_PATH,
@@ -107,7 +109,7 @@ export function getQwenStatus(): QwenStatus {
     message: cachedModel ? 'Local model loaded' : 'Local model not loaded',
     device: cachedModel ? backend : 'Not initialized',
     geminiApiCalls: 0,
-    modelPath: MODEL_PATH,
+    modelPath: path.relative(process.cwd(), MODEL_PATH),
     modelLoaded: cachedModel !== null,
     loadTimeMs: modelLoadTimeMs,
   };
@@ -149,7 +151,8 @@ JSON SCHEMA:
     }
   ],
   "warningSigns": [ { "value": "", "status": "FOUND|MISSING|UNCLEAR", "evidence": "" } ],
-  "emergencyInstructions": [ { "value": "", "status": "FOUND|MISSING|UNCLEAR", "evidence": "" } ]
+  "emergencyInstructions": [ { "value": "", "status": "FOUND|MISSING|UNCLEAR", "evidence": "" } ],
+  "additionalNotes": [ { "value": "", "status": "FOUND|MISSING|UNCLEAR", "evidence": "" } ]
 }
 
 CRITICAL RULES:
@@ -344,14 +347,14 @@ function cleanFollowUpInstructions(
   };
 }
 
-function normalizeCanonicalData(data: any): CanonicalDischargeExtraction {
+export function normalizeCanonicalData(data: any): CanonicalDischargeExtraction {
   const normField = (f: any): ExtractedField => {
     if (typeof f !== 'object' || f === null) {
       const v = typeof f === 'string' ? f.trim() : String(f ?? '').trim();
-      return { value: v, status: v ? 'FOUND' : 'MISSING', evidence: v };
+      return { value: v, status: v ? 'UNCLEAR' : 'MISSING', evidence: v };
     }
     const value = typeof f.value === 'string' ? f.value.trim() : String(f.value ?? '').trim();
-    const status = ['FOUND', 'MISSING', 'UNCLEAR'].includes(f.status) ? f.status : (value ? 'FOUND' : 'MISSING');
+    const status = ['FOUND', 'MISSING', 'UNCLEAR'].includes(f.status) ? f.status : (value ? 'UNCLEAR' : 'MISSING');
     const evidence = typeof f.evidence === 'string' ? f.evidence.trim() : value;
     return { value, status, evidence };
   };
@@ -366,7 +369,7 @@ function normalizeCanonicalData(data: any): CanonicalDischargeExtraction {
   const normFollowUp = (item: any): any => {
     if (typeof item === 'string') {
       const v = item.trim();
-      const field: ExtractedField = v ? { value: v, status: 'FOUND', evidence: v } : emptyField;
+      const field: ExtractedField = v ? { value: v, status: 'UNCLEAR', evidence: v } : emptyField;
       return {
         provider: emptyField,
         date: emptyField,
@@ -404,7 +407,7 @@ function normalizeCanonicalData(data: any): CanonicalDischargeExtraction {
         if (!rawInstructionsField.value) {
           rawInstructionsField = {
             value: dateField.value.startsWith('in ') ? dateField.value : `in ${dateField.value}`,
-            status: 'FOUND',
+            status: dateField.status,
             evidence: dateField.evidence,
           };
         }
@@ -479,6 +482,7 @@ function normalizeCanonicalData(data: any): CanonicalDischargeExtraction {
       : [],
     warningSigns: normArrayField(data?.warningSigns),
     emergencyInstructions: normArrayField(data?.emergencyInstructions),
+    additionalNotes: normArrayField(data?.additionalNotes),
   };
 }
 

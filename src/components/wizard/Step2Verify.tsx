@@ -26,14 +26,37 @@ interface Props {
   extractedData: StructuredDischargeInfo;
   onVerifyComplete: (verified: AuthoritativeDischargeData) => void;
   clinicianName: string;
+  onDirtyChange: (dirty: boolean) => void;
+}
+
+export function createBlankFollowUp(id: string): FollowUpItem {
+  return { id, provider: '', date: '', time: '', location: '', instructions: '', status: 'MISSING' };
+}
+
+export function editFollowUp(item: FollowUpItem, field: 'provider' | 'date' | 'time' | 'location' | 'instructions', value: string): FollowUpItem {
+  const keys = ['provider', 'date', 'time', 'location', 'instructions'] as const;
+  const updated: FollowUpItem = { ...item, [field]: value };
+  for (const key of keys) updated[`${key}Status`] = item[`${key}Status`] || (item[key] ? item.status : 'MISSING');
+  updated[`${field}Status`] = value.trim() ? 'FOUND' : 'MISSING';
+  const statuses = keys.map(key => updated[`${key}Status`]);
+  updated.status = statuses.includes('UNCLEAR') ? 'UNCLEAR' : statuses.includes('FOUND') ? 'FOUND' : 'MISSING';
+  return updated;
 }
 
 export const Step2Verify: React.FC<Props> = ({
   extractedData,
   onVerifyComplete,
   clinicianName,
+  onDirtyChange,
 }) => {
   const [data, setData] = useState<StructuredDischargeInfo>(extractedData);
+  const sourceExcerpts = [
+    ...(['name', 'patientId', 'age', 'gender'] as const).map(label => ({ label, quote: extractedData.patient[label].note })),
+    ...(['diagnosis', 'procedures', 'allergies', 'diet', 'activityRestrictions', 'woundCare', 'warningSigns', 'emergencyInstructions', 'additionalNotes'] as const)
+      .flatMap(section => extractedData[section].map((field, index) => ({ label: `${section} ${index + 1}`, quote: field.note }))),
+    ...extractedData.medications.map((med, index) => ({ label: `Medication ${index + 1}`, quote: med.sourceSection })),
+    ...extractedData.followUp.map((appointment, index) => ({ label: `Follow-up ${index + 1}`, quote: appointment.sourceSection })),
+  ];
 
   // Helper updater for patient fields
   const updatePatientField = (field: 'name' | 'patientId' | 'age' | 'gender', value: string) => {
@@ -70,11 +93,12 @@ export const Step2Verify: React.FC<Props> = ({
   const addArrayItem = (
     section: 'diagnosis' | 'procedures' | 'allergies' | 'diet' | 'activityRestrictions' | 'woundCare' | 'warningSigns' | 'emergencyInstructions' | 'additionalNotes'
   ) => {
+    onDirtyChange(true);
     setData((prev) => ({
       ...prev,
       [section]: [
         ...prev[section],
-        { value: '', status: 'FOUND' as FieldStatus },
+        { value: '', status: 'MISSING' as FieldStatus },
       ],
     }));
   };
@@ -83,6 +107,7 @@ export const Step2Verify: React.FC<Props> = ({
     section: 'diagnosis' | 'procedures' | 'allergies' | 'diet' | 'activityRestrictions' | 'woundCare' | 'warningSigns' | 'emergencyInstructions' | 'additionalNotes',
     index: number
   ) => {
+    onDirtyChange(true);
     setData((prev) => ({
       ...prev,
       [section]: prev[section].filter((_, i) => i !== index),
@@ -113,18 +138,19 @@ export const Step2Verify: React.FC<Props> = ({
   };
 
   const addMedication = () => {
+    onDirtyChange(true);
     const newMed: MedicationItem = {
       id: `med-custom-${Date.now()}`,
       name: '',
       dosage: '',
-      dosageStatus: 'FOUND',
+      dosageStatus: 'MISSING',
       frequency: '',
-      frequencyStatus: 'FOUND',
+      frequencyStatus: 'MISSING',
       duration: '',
-      durationStatus: 'FOUND',
+      durationStatus: 'MISSING',
       instructions: '',
-      instructionsStatus: 'FOUND',
-      overallStatus: 'FOUND',
+      instructionsStatus: 'MISSING',
+      overallStatus: 'MISSING',
     };
     setData((prev) => ({
       ...prev,
@@ -133,6 +159,7 @@ export const Step2Verify: React.FC<Props> = ({
   };
 
   const removeMedication = (index: number) => {
+    onDirtyChange(true);
     setData((prev) => ({
       ...prev,
       medications: prev.medications.filter((_, i) => i !== index),
@@ -140,24 +167,17 @@ export const Step2Verify: React.FC<Props> = ({
   };
 
   // Follow-up Updaters
-  const updateFollowUp = (index: number, field: keyof FollowUpItem, value: string) => {
+  const updateFollowUp = (index: number, field: 'provider' | 'date' | 'time' | 'location' | 'instructions', value: string) => {
     setData((prev) => {
       const items = [...prev.followUp];
-      items[index] = { ...items[index], [field]: value, status: 'FOUND' };
+      items[index] = editFollowUp(items[index], field, value);
       return { ...prev, followUp: items };
     });
   };
 
   const addFollowUp = () => {
-    const newItem: FollowUpItem = {
-      id: `fu-custom-${Date.now()}`,
-      provider: '',
-      date: new Date().toISOString().split('T')[0],
-      time: '10:00 AM',
-      location: '',
-      instructions: '',
-      status: 'FOUND',
-    };
+    onDirtyChange(true);
+    const newItem = createBlankFollowUp(`fu-custom-${Date.now()}`);
     setData((prev) => ({
       ...prev,
       followUp: [...prev.followUp, newItem],
@@ -165,6 +185,7 @@ export const Step2Verify: React.FC<Props> = ({
   };
 
   const removeFollowUp = (index: number) => {
+    onDirtyChange(true);
     setData((prev) => ({
       ...prev,
       followUp: prev.followUp.filter((_, i) => i !== index),
@@ -193,7 +214,7 @@ export const Step2Verify: React.FC<Props> = ({
   };
 
   return (
-    <div className="mx-auto max-w-5xl p-6">
+    <div className="mx-auto max-w-5xl p-6" onChange={() => onDirtyChange(true)}>
       {/* Banner */}
       <div className="mb-6 rounded-[28px] bg-[#5A5A40]/10 border border-[#5A5A40]/20 p-6 text-[#3E4234] shadow-xs">
         <div className="flex items-center justify-between">
@@ -221,6 +242,13 @@ export const Step2Verify: React.FC<Props> = ({
       </div>
 
       <div className="flex flex-col gap-6">
+        <details className="rounded-2xl bg-white p-5 border border-slate-200">
+          <summary className="cursor-pointer font-bold text-sm">Extracted source excerpts — compare with the original document</summary>
+          <p className="mt-2 text-xs">These excerpts were captured during extraction. They do not verify later edits or replace review of the original source.</p>
+          <dl className="mt-3 space-y-2 text-xs">
+            {sourceExcerpts.map((item, index) => <div key={index}><dt className="font-bold">{item.label}</dt><dd className="whitespace-pre-wrap">{item.quote || 'No source excerpt captured'}</dd></div>)}
+          </dl>
+        </details>
         {/* Section 1: Patient Details */}
         <div className="rounded-2xl bg-white p-5 shadow-xs border border-slate-200">
           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-2">
@@ -568,33 +596,34 @@ export const Step2Verify: React.FC<Props> = ({
           <div className="flex flex-col gap-3">
             {data.followUp.map((fu, idx) => (
               <div key={fu.id || idx} className="grid grid-cols-1 md:grid-cols-5 gap-2 rounded-xl border border-slate-200 p-3 bg-slate-50/50">
-                <input aria-label="Doctor / Clinic Name"
+                <div><input aria-label="Doctor / Clinic Name"
                   type="text"
                   value={fu.provider}
                   onChange={(e) => updateFollowUp(idx, 'provider', e.target.value)}
                   className="rounded-lg border border-slate-300 p-1.5 text-xs font-bold text-slate-800"
                   placeholder="Doctor / Clinic Name"
-                />
-                <input aria-label="date"
-                  type="date"
+                /><StatusBadge status={fu.providerStatus || fu.status} size="sm" /></div>
+                <div><input aria-label="date"
+                  type="text"
+                  placeholder="Date as stated in source"
                   value={fu.date}
                   onChange={(e) => updateFollowUp(idx, 'date', e.target.value)}
                   className="rounded-lg border border-slate-300 p-1.5 text-xs text-slate-800"
-                />
-                <input aria-label="Time (e.g. 10:30 AM)"
+                /><StatusBadge status={fu.dateStatus || fu.status} size="sm" /></div>
+                <div><input aria-label="Time (e.g. 10:30 AM)"
                   type="text"
                   value={fu.time}
                   onChange={(e) => updateFollowUp(idx, 'time', e.target.value)}
                   className="rounded-lg border border-slate-300 p-1.5 text-xs text-slate-800"
                   placeholder="Time (e.g. 10:30 AM)"
-                />
-                <input aria-label="Clinic Location / Room"
+                /><StatusBadge status={fu.timeStatus || fu.status} size="sm" /></div>
+                <div><input aria-label="Clinic Location / Room"
                   type="text"
                   value={fu.location}
                   onChange={(e) => updateFollowUp(idx, 'location', e.target.value)}
                   className="rounded-lg border border-slate-300 p-1.5 text-xs text-slate-800"
                   placeholder="Clinic Location / Room"
-                />
+                /><StatusBadge status={fu.locationStatus || fu.status} size="sm" /></div>
                 <div className="flex items-center gap-2">
                   <input aria-label="Instructions"
                     type="text"
@@ -603,7 +632,7 @@ export const Step2Verify: React.FC<Props> = ({
                     className="flex-1 rounded-lg border border-slate-300 p-1.5 text-xs text-slate-800"
                     placeholder="Instructions"
                   />
-                  <StatusBadge status={fu.status} size="sm" />
+                  <StatusBadge status={fu.instructionsStatus || fu.status} size="sm" />
                   <button aria-label="Remove Follow Up"
                     type="button"
                     onClick={() => removeFollowUp(idx)}
@@ -628,7 +657,7 @@ export const Step2Verify: React.FC<Props> = ({
                 Confirm Verified Authoritative Patient Data
               </h4>
               <p className="text-xs text-[#D9D1C5] mt-0.5">
-                Clicking confirm creates an immutable source of truth snapshot. All generated reports and safety audits will strictly anchor to this dataset.
+                Confirm only information checked against the original source. The verified snapshot is saved when you generate and save the report.
               </p>
             </div>
           </div>

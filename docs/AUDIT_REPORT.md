@@ -1,3 +1,7 @@
+# Historical audit notice
+
+This report describes the earlier remediation baseline. Subsequent independent regressions reopened clinical evidence, missing-allergy and PDF-preservation issues. See [current findings](audit/architecture-security-review.md) and [final verification](audit/final-verification-report.md) for current dispositions. Historical green checks are not evidence that the later cases were covered.
+
 # Audit remediation and verification report
 
 Date: **20 October 2026**, Asia/Kolkata. Repository: **Abishek-805/Health_Qwen**. This report replaces the initial audit recorded in commit `9e4f183`. It covers source/configuration, dependencies, authentication, storage/recovery, approval/PDF trust boundaries, extraction/OCR, audit behavior, UI, Windows lifecycle, and local build/runtime verification.

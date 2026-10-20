@@ -90,7 +90,7 @@ function getFactToAppend(finding: AuditFinding, verifiedData?: AuthoritativeDisc
           .join(', ');
         return `⚠️ DRUG ALLERGIES: ${list}`;
       }
-      return 'No Known Drug Allergies (NKDA)';
+      return 'Allergy information not provided';
     case 'MEDICATIONS':
     case 'NUMERIC_VALUES':
       if (verifiedData.medications && verifiedData.medications.length > 0) {

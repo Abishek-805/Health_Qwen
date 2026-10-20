@@ -15,6 +15,15 @@ export default function App() {
   const [clinicianName, setClinicianName] = useState<string>('');
   const [documents, setDocuments] = useState<DischargeDocument[]>([]);
   const [activeDocument, setActiveDocument] = useState<DischargeDocument | null>(null);
+  const [newDocumentSession, setNewDocumentSession] = useState(0);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const canLeaveDocument = () => !hasUnsavedChanges || window.confirm('Discard unsaved document changes? Save them first to keep your changes.');
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [hasUnsavedChanges]);
 
   // Active Patient Context (Patient Isolation)
   const [activePatientContext, setActivePatientContext] = useState<{
@@ -62,18 +71,23 @@ export default function App() {
   };
 
   const handleStartNewDocument = () => {
+    if (!canLeaveDocument()) return;
+    setNewDocumentSession(value => value + 1);
     setActiveDocument(null);
     setActivePatientContext(null);
     setActiveTab('create');
   };
 
   const handleStartNewDocumentForPatient = (name: string, id: string) => {
+    if (!canLeaveDocument()) return;
+    setNewDocumentSession(value => value + 1);
     setActivePatientContext({ name, id });
     setActiveDocument(null);
     setActiveTab('create');
   };
 
   const handleSelectDocumentForReview = (doc: DischargeDocument) => {
+    if (!canLeaveDocument()) return;
     setActiveDocument(doc);
     if (doc.verifiedData?.patient) {
       setActivePatientContext({
@@ -94,6 +108,7 @@ export default function App() {
       <Sidebar
         activeTab={activeTab}
         setActiveTab={(tab) => {
+          if (tab !== activeTab && !canLeaveDocument()) return;
           if (tab === 'create' && !activeDocument) {
             setActiveDocument(null);
           }
@@ -127,6 +142,8 @@ export default function App() {
 
           {activeTab === 'create' && (
             <CreateInstructionsPage
+              key={activeDocument?.id || 'new-' + newDocumentSession}
+              onDirtyChange={setHasUnsavedChanges}
               clinicianName={clinicianName}
               hospitalInfo={hospitalInfo}
               initialDocument={activeDocument}

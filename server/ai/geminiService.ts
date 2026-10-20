@@ -44,6 +44,7 @@ export async function checkGeminiStatus(): Promise<{
   model: string;
   message: string;
 }> {
+  if (process.env.CLOUD_PROCESSING_ENABLED !== 'true') return { online: false, model: '', message: 'Cloud processing is disabled.' };
   const apiKey = process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_BACKUP;
   if (!apiKey || apiKey === 'MY_GEMINI_API_KEY') {
     return {
@@ -78,7 +79,7 @@ export async function checkGeminiStatus(): Promise<{
     return {
       online: false,
       model: getGeminiModelName(),
-      message: err?.message || 'Failed to ping Gemini API',
+      message: 'Cloud connectivity check failed.',
     };
   }
 }
@@ -405,9 +406,9 @@ export function buildFallbackReport(
   const medsText = verifiedData.medications
     .map(
       (m) =>
-        `- **${m.name}** (${m.dosage || 'Dose not specified'}): ${
-          m.frequency ? m.frequency : 'Take as prescribed by doctor'
-        } for ${m.duration || 'duration per prescription'}. ${m.instructions}`
+        `- **${m.name}** (Dose: ${m.dosageStatus === 'FOUND' && m.dosage ? m.dosage : 'Not specified'}), Frequency: ${
+          m.frequencyStatus === 'FOUND' && m.frequency ? m.frequency : 'Not specified'
+        }, Duration: ${m.durationStatus === 'FOUND' && m.duration ? m.duration : 'Not specified'}. ${m.instructionsStatus === 'FOUND' ? m.instructions : ''}`
     )
     .join('\n');
 

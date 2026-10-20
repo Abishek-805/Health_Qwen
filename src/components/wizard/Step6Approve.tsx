@@ -20,7 +20,7 @@ interface Props {
   clinicianName: string;
 }
 
-type DownloadState = 'idle' | 'generating' | 'success' | 'error';
+type DownloadState = 'idle' | 'generating' | 'requested' | 'error';
 
 export const Step6Approve: React.FC<Props> = ({
   document: doc,
@@ -39,7 +39,7 @@ export const Step6Approve: React.FC<Props> = ({
   const [downloadedFilename, setDownloadedFilename] = useState<string>('');
   const [downloadError, setDownloadError] = useState<string>('');
 
-  useEffect(() => { setIsApproved(doc.approvalStatus === 'APPROVED'); setReviewConfirmed(false); }, [doc.id, doc.currentVersion, doc.approvalStatus]);
+  useEffect(() => { setIsApproved(doc.approvalStatus === 'APPROVED'); setReviewConfirmed(false); setDownloadState('idle'); setDownloadedFilename(''); setDownloadError(''); }, [doc.id, doc.currentVersion, doc.approvalStatus]);
   const audit = doc.auditResult;
   const isCritical = audit?.overallStatus === 'CRITICAL_ISSUE';
 
@@ -113,7 +113,7 @@ export const Step6Approve: React.FC<Props> = ({
 
       if (!pre.ok) {
         const err = await pre.json().catch(() => null);
-        setDownloadError(err?.message || err?.code || `Server rejected the PDF request (HTTP ${pre.status}).`);
+        setDownloadError(err?.error || err?.message || err?.code || `Server rejected the PDF request (HTTP ${pre.status}).`);
         setDownloadState('error');
         return;
       }
@@ -147,7 +147,7 @@ export const Step6Approve: React.FC<Props> = ({
 
       const expectedFilename = `Discharge_Instructions_${doc.verifiedData?.patient?.name?.value || 'Patient'}_${doc.verifiedData?.patient?.patientId?.value || 'ID'}_v${doc.generatedReport?.version || 1}.pdf`;
       setDownloadedFilename(expectedFilename);
-      setDownloadState('success');
+      setDownloadState('requested');
     } catch (err: any) {
       console.error('[Step6] PDF download initiation error:', err);
       setDownloadError(err?.message || 'Failed to initiate PDF download.');
@@ -280,11 +280,11 @@ export const Step6Approve: React.FC<Props> = ({
         </div>
 
         {/* Download success/error feedback */}
-        {downloadState === 'success' && downloadedFilename && (
+        {downloadState === 'requested' && downloadedFilename && (
           <div className="mb-4 rounded-2xl bg-emerald-50 border border-emerald-200 p-4 flex items-start gap-3">
             <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
             <div>
-              <p className="text-xs font-bold text-emerald-800">Official PDF download started.</p>
+              <p className="text-xs font-bold text-emerald-800" role="status">PDF download requested. Check your browser downloads for completion.</p>
               <p className="text-xs text-emerald-700 mt-0.5 font-mono">{downloadedFilename}</p>
             </div>
           </div>
@@ -330,8 +330,8 @@ export const Step6Approve: React.FC<Props> = ({
             <span>
               {isDownloading
                 ? 'GENERATING PDF...'
-                : downloadState === 'success'
-                ? 'DOWNLOAD STARTED'
+                : downloadState === 'requested'
+                ? 'DOWNLOAD REQUESTED'
                 : 'DOWNLOAD PDF'}
             </span>
           </button>

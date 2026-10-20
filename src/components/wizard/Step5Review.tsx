@@ -55,34 +55,10 @@ export const Step5Review: React.FC<Props> = ({
     setIsLoading(true);
     setIsReAuditing(true);
 
-    const newVersion = report.version + 1;
-    const updatedReport: GeneratedReport = {
-      ...report,
-      version: newVersion,
-      sections,
-      generatedAt: new Date().toISOString(),
-    };
-
     try {
-      // Re-run hybrid audit against new version
-      const res = await fetch('/api/audit-instructions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          verifiedData,
-          report: updatedReport,
-        }),
-      });
-
-      if (!res.ok) {
-        throw new Error('Re-audit failed');
-      }
-
-      const reAuditResult = (await res.json()) as HybridAuditResult;
-      await onUpdateReport(updatedReport, reAuditResult);
+      await onUpdateReport({ ...report, sections });
     } catch (err) {
-      console.error('Re-audit error:', err);
-      alert('Failed to re-audit updated report.');
+      alert(err instanceof Error ? err.message : 'Failed to save and re-audit the report.');
     } finally {
       setIsLoading(false);
       setIsReAuditing(false);
@@ -212,7 +188,7 @@ export const Step5Review: React.FC<Props> = ({
             <div>
               <span className="text-[#8C4A4A] block text-[10px] uppercase font-bold">Allergies</span>
               <p className="text-[#8C4A4A] font-bold">
-                {verifiedData.allergies.map((a) => a.value).join(', ') || 'NKDA (No Known Allergies)'}
+                {verifiedData.allergies.map((a) => a.value).join(', ') || 'Allergy information not provided'}
               </p>
             </div>
 

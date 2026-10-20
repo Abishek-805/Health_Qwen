@@ -85,11 +85,17 @@ npm test                  # Authentication, trust boundaries, persistence/recove
 npm run test:model        # Eight model/OCR/extraction/audit/budget tests; requires downloaded weights and native runtime
 npm run test:integration  # Eighteen service-level acceptance criteria; requires model/OCR
 npm run test:windows      # Windows batch lifecycle checks, uses port 3301
+npm run test:clinical     # Synthetic clinical regressions and scorer checks
+npm run evaluate:model    # 31-case pinned-model evaluation; requires weights/native runtime
+npm run evaluate:pipeline # Labelled rule audit and all-section PDF evaluation
+npm run evaluate:ocr      # Pipeline evaluation plus one known-text OCR fixture
 npm run build
+npm run test:production   # Built real server; synthetic database, auth/save/approval/PDF/restart
+npm run test:development  # Vite private-file denial and the same synthetic HTTP flow
 npm audit
 ```
 
-`.github/workflows/ci.yml` runs clean installation, TypeScript checks, deterministic/security/PDF tests, build, and dependency audit on Node 24. Hardware/model benchmarks are explicit local checks. The audit report distinguishes executed checks from unverified clinical and platform claims.
+`.github/workflows/ci.yml` runs clean installation, TypeScript checks, deterministic/security/clinical/PDF tests, pipeline evaluation, build, development/production smoke, and dependency audit on Node 24. Hardware/model benchmarks are explicit local checks. The audit report distinguishes executed checks from unverified clinical and platform claims.
 
 For production-mode local execution:
 
@@ -130,4 +136,20 @@ All API routes except `/api/health` require the same HTTP Basic credentials as t
 - Extraction busy/too long: finish the current request or split the source; do not retry in parallel.
 - SQLite errors: preserve the database and WAL files, stop the app, and recover from a verified backup. Never delete the database to repair a startup error.
 
-See the [full remediation and verification report](docs/AUDIT_REPORT.md) for remaining limits.
+## Engineering and evaluation documentation
+
+- [Architecture and full system design](docs/architecture.md)
+- [API reference](docs/api.md)
+- [Security and privacy](docs/security-and-privacy.md)
+- [Setup, operations and recovery](docs/operations.md)
+- [Clinical evaluation protocol](docs/clinical-evaluation.md) and [qualified review form](docs/clinical-review-template.md)
+- [Formal project report](docs/project-report.md)
+- [Current findings](docs/audit/architecture-security-review.md), [roadmap](docs/audit/remediation-roadmap.md), [final verification](docs/audit/final-verification-report.md), and [resumable progress](docs/audit/PROGRESS.md)
+
+The synthetic evaluation is not a clinical validation. Conservative parsing retains malformed/missing model certainty as UNCLEAR; the final 31-case run had 83.97% strict value agreement but only 39.66% value-and-status agreement. These are author-labelled synthetic scores, with substantive omissions and manual review still required. See the protocol for denominators and limitations. Matching source text cannot establish clinical correctness or recover an omitted fact.
+
+Medication evidence/audit rules conservatively use line/semicolon clauses; wrapped/combined or stopped/historical instructions may need manual reconciliation. Missing allergies remain not provided. Downloads include all eight reviewed report sections and do not invent a discharge date. The UI reports a download request, not confirmed completion.
+
+Older saved audits need a fresh save/re-audit and clinician review before approval/export under the new audit policy. Existing records and history are preserved. Long clinical PDF fields now paginate rather than overflowing a page.
+
+The [earlier audit](docs/AUDIT_REPORT.md) is historical; current findings and executed checks are in the reports above.

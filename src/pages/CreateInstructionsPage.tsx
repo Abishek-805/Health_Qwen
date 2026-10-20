@@ -23,6 +23,11 @@ interface Props {
   activePatientContext?: { name: string; id: string } | null;
   onClearPatientContext?: () => void;
   onDocumentCreated: (doc: DischargeDocument) => void;
+  onDirtyChange: (dirty: boolean) => void;
+}
+
+export function sourceNavigationBlocked(currentStep: number, nextStep: number, dirty: boolean): boolean {
+  return dirty && currentStep !== nextStep && (currentStep === 2 || nextStep > 2);
 }
 
 export const CreateInstructionsPage: React.FC<Props> = ({
@@ -32,10 +37,13 @@ export const CreateInstructionsPage: React.FC<Props> = ({
   activePatientContext,
   onClearPatientContext,
   onDocumentCreated,
+  onDirtyChange,
 }) => {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [maxReachedStep, setMaxReachedStep] = useState<number>(1);
   const [hasUnsavedReportEdits, setHasUnsavedReportEdits] = useState(false);
+  const [hasUnsavedSourceEdits, setHasUnsavedSourceEdits] = useState(false);
+  useEffect(() => { onDirtyChange(hasUnsavedReportEdits || hasUnsavedSourceEdits); return () => onDirtyChange(false); }, [hasUnsavedReportEdits, hasUnsavedSourceEdits, onDirtyChange]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const [extractedData, setExtractedData] = useState<StructuredDischargeInfo | null>(null);
@@ -102,6 +110,7 @@ export const CreateInstructionsPage: React.FC<Props> = ({
     setDocument(null);
 
     setExtractedData(extracted);
+    setHasUnsavedSourceEdits(true);
     setCurrentStep(2);
     setMaxReachedStep((prev) => Math.max(prev, 2));
   };
@@ -112,6 +121,8 @@ export const CreateInstructionsPage: React.FC<Props> = ({
     setGeneratedReport(null); setAuditResult(null);
     setMaxReachedStep(3);
     setVerifiedData(verified);
+    setExtractedData(verified);
+    setHasUnsavedSourceEdits(true);
     setCurrentStep(3);
     setMaxReachedStep((prev) => Math.max(prev, 3));
   };
@@ -128,6 +139,7 @@ export const CreateInstructionsPage: React.FC<Props> = ({
       if (!res.ok) throw new Error((await res.json()).error || 'Document save failed');
       const saved: DischargeDocument = await res.json();
       setDocument(saved); setGeneratedReport(saved.generatedReport!); setAuditResult(saved.auditResult!);
+      setHasUnsavedSourceEdits(false);
       onDocumentCreated(saved); setCurrentStep(4); setMaxReachedStep(prev => Math.max(prev, 4));
     } finally { setIsLoading(false); }
   };
@@ -144,14 +156,18 @@ export const CreateInstructionsPage: React.FC<Props> = ({
     onDocumentCreated(saved);
   };
 
-  const effectiveDocument = document;
+  const effectiveDocument = !hasUnsavedSourceEdits && generatedReport && auditResult ? document : null;
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-between">
       <div>
         <StepIndicator
           currentStep={currentStep}
-          setStep={(s) => { if (hasUnsavedReportEdits && s !== currentStep) { alert('Save report edits before changing steps.'); return; } setCurrentStep(s); }}
+          setStep={(s) => {
+            if (hasUnsavedReportEdits && s !== currentStep) { alert('Save report edits before changing steps.'); return; }
+            if (sourceNavigationBlocked(currentStep, s, hasUnsavedSourceEdits)) { alert('Confirm the changed source, then generate and save its report before reviewing or approving.'); return; }
+            setCurrentStep(s);
+          }}
           maxReachedStep={maxReachedStep}
         />
 
@@ -167,6 +183,7 @@ export const CreateInstructionsPage: React.FC<Props> = ({
 
           {currentStep === 2 && extractedData && (
             <Step2Verify
+              onDirtyChange={setHasUnsavedSourceEdits}
               extractedData={extractedData}
               onVerifyComplete={handleVerifyComplete}
               clinicianName={clinicianName}

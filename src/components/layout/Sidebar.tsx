@@ -111,7 +111,7 @@ export const Sidebar: React.FC<Props> = ({
           </div>
           <div className="flex-1 overflow-hidden">
             <p className="truncate text-xs font-bold text-[#3E4234]">{clinicianName}</p>
-            <p className="text-[10px] text-[#665F54] truncate">Attending Clinician (Authoritative)</p>
+            <p className="text-[10px] text-[#665F54] truncate">Clinician account</p>
           </div>
         </div>
       </div>

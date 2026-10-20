@@ -18,7 +18,9 @@ function status(value: unknown): FieldStatus {
 }
 function field(value: unknown) {
   const item = object(value);
-  return { value: text(item.value), status: status(item.status) };
+  const result = { value: text(item.value), status: status(item.status) };
+  if ((result.status === 'FOUND' && !result.value.trim()) || (result.status === 'MISSING' && result.value.trim())) throw new HttpError(400, 'Clinical values and certainty statuses must agree. Correct the field before confirming.');
+  return result;
 }
 function list<T>(value: unknown, parse: (item: any) => T): T[] {
   if (!Array.isArray(value) || value.length > 100) throw new HttpError(400, 'Expected at most 100 clinical items per field.');
@@ -40,12 +42,19 @@ export function verified(value: unknown): AuthoritativeDischargeData {
     }),
     followUp: list(input.followUp, value => {
       const item = object(value);
-      return { id: text(item.id, 200), provider: text(item.provider), date: text(item.date), time: text(item.time), location: text(item.location), instructions: text(item.instructions), status: status(item.status) };
+      const overall = status(item.status);
+      const substatus = (key: 'provider' | 'date' | 'time' | 'location' | 'instructions') => field({ value: item[key], status: item[`${key}Status`] ?? (item[key] ? overall : 'MISSING') }).status;
+      return { id: text(item.id, 200), provider: text(item.provider), date: text(item.date), time: text(item.time), location: text(item.location), instructions: text(item.instructions), status: overall,
+        providerStatus: substatus('provider'), dateStatus: substatus('date'), timeStatus: substatus('time'), locationStatus: substatus('location'), instructionsStatus: substatus('instructions') };
     }),
     verifiedAt: new Date().toISOString(), verifiedBy: clinicianIdentity(), isConfirmedAuthoritative: true,
   };
   const hasUnclear = (value: unknown): boolean => !!value && typeof value === 'object' && Object.entries(value).some(([key, item]) => (key.toLowerCase().endsWith('status') && item === 'UNCLEAR') || hasUnclear(item));
   if (hasUnclear(result)) throw new HttpError(400, 'Resolve every UNCLEAR field before confirming the source.');
+  for (const med of result.medications) {
+    for (const key of ['dosage', 'frequency', 'duration', 'instructions'] as const) field({ value: med[key], status: med[`${key}Status`] });
+    if (med.overallStatus !== 'FOUND') throw new HttpError(400, 'Confirm or remove each medication before continuing.');
+  }
   text(result.patient.name.value, 200, true); text(result.patient.patientId.value, 200, true);
   return result;
 }

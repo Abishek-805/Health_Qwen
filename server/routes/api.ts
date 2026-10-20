@@ -7,6 +7,7 @@ import { extractClinicalDataLocal, getQwenStatus } from '../services/localClinic
 import { mapCanonicalToStructured } from '../services/clinicalExtractionService';
 import { validateSourceEvidence } from '../services/sourceEvidenceValidator';
 import { executeHybridAudit } from '../audit/hybridAudit';
+import { AUDIT_POLICY_VERSION } from '../audit/deterministicAudit';
 import { documentRepository } from '../repositories/documentRepository';
 import { generateApprovedDischargePdf } from '../services/serverPdfGenerator';
 import { authenticate, clinicianIdentity } from '../security';
@@ -113,8 +114,10 @@ apiRouter.post(['/approve-instructions', '/approve-document'], route(async (req,
   if (req.body.clinicianReviewConfirmed !== true) throw new HttpError(400, 'Confirm that all clinical content and audit limitations have been reviewed.');
   if (req.body.reportVersion !== doc.currentVersion) throw new HttpError(409, 'Report changed. Reload and review the current version before approving.');
   if (!doc.generatedReport || !doc.verifiedData || !doc.auditResult || doc.auditResult.reportVersion !== doc.generatedReport.version) throw new HttpError(400, 'A current saved report and audit are required.');
+  if (doc.auditResult.policyVersion !== AUDIT_POLICY_VERSION) throw new HttpError(409, 'Saved audit uses an older policy. Save, audit and review the report again before approval.');
   if (doc.auditResult.overallStatus === 'CRITICAL_ISSUE') throw new HttpError(403, 'CRITICAL_AUDIT_BLOCK');
   if (doc.auditResult.cloudAuditStatus === 'unavailable') throw new HttpError(403, 'The requested cloud audit did not complete. Retry the audit before approval.');
+  if (doc.approvalStatus === 'APPROVED' && doc.approvedBy) { res.json({ success: true, document: doc }); return; }
   const signed = { ...clinicianIdentity(), timestamp: new Date().toISOString(), signatureNote: text(req.body.signatureNote || '', 2000) };
   const updated = documentRepository.updateDocument(doc.id, { approvalStatus: 'APPROVED', approvedBy: signed }, doc.currentVersion);
   res.json({ success: true, document: updated });
@@ -125,6 +128,7 @@ function approvedPdf(req: Request): DischargeDocument {
   const doc = requireDocument(req.body.documentId);
   if (savesInProgress.has(doc.id)) throw new HttpError(409, 'Wait for the document update.');
   if (!doc.verifiedData || !doc.generatedReport || !doc.auditResult || !doc.approvedBy || doc.approvalStatus !== 'APPROVED') throw new HttpError(400, 'The saved document requires clinician approval.');
+  if (doc.auditResult.policyVersion !== AUDIT_POLICY_VERSION) throw new HttpError(409, 'Saved audit uses an older policy. Save, audit and review the report again before export.');
   if (doc.auditResult.reportVersion !== doc.generatedReport.version || doc.currentVersion !== doc.generatedReport.version) throw new HttpError(409, 'The saved audit is stale.');
   if (doc.auditResult.overallStatus === 'CRITICAL_ISSUE' || doc.auditResult.cloudAuditStatus === 'unavailable') throw new HttpError(403, 'CRITICAL_AUDIT_BLOCK');
   return doc;

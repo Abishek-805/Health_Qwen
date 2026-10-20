@@ -7,7 +7,7 @@ import {
   AuditCategoryStatus,
   AuditRecommendation,
 } from '../../src/types/discharge';
-import { runDeterministicAudit } from './deterministicAudit';
+import { AUDIT_POLICY_VERSION, runDeterministicAudit } from './deterministicAudit';
 import { runSemanticAudit } from './semanticAudit';
 
 export const ALL_18_AUDIT_CATEGORIES: AuditCategory[] = [
@@ -110,6 +110,7 @@ export async function executeHybridAudit(
   const passCount = Object.values(categorySummaries).filter(category => category.status === 'PASS').length;
 
   return {
+    policyVersion: AUDIT_POLICY_VERSION,
     cloudAuditStatus,
     coverageNote,
     auditId,

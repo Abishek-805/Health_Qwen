@@ -40,6 +40,7 @@ export interface CanonicalDischargeExtraction {
   followUpAppointments: ExtractedFollowUp[];
   warningSigns: ExtractedField[];
   emergencyInstructions: ExtractedField[];
+  additionalNotes?: ExtractedField[];
 }
 
 export function mapCanonicalToStructured(
@@ -67,7 +68,7 @@ export function mapCanonicalToStructured(
       instructions: m.instructions.value,
       instructionsStatus: m.instructions.status || 'FOUND',
       overallStatus: m.name.status === 'FOUND' ? 'FOUND' : m.name.status,
-      sourceSection: m.instructions.evidence || m.name.evidence,
+      sourceSection: [...new Set(Object.values(m).map(field => field.evidence).filter(Boolean))].join('\n'),
     })),
     allergies: canonical.allergies.map((a) => ({ value: a.value, status: a.status, note: a.evidence })),
     diet: canonical.dietaryInstructions.map((d) => ({ value: d.value, status: d.status, note: d.evidence })),
@@ -80,6 +81,12 @@ export function mapCanonicalToStructured(
       time: f.time.value,
       location: f.location.value,
       instructions: f.instructions.value,
+      providerStatus: f.provider.status,
+      dateStatus: f.date.status,
+      timeStatus: f.time.status,
+      locationStatus: f.location.status,
+      instructionsStatus: f.instructions.status,
+      sourceSection: [...new Set(Object.values(f).map(field => field.evidence).filter(Boolean))].join('\n'),
       status: Object.values(f).some(field => field.status === 'UNCLEAR') ? 'UNCLEAR' :
         f.provider.status === 'FOUND' ||
         f.date.status === 'FOUND' ||
@@ -91,7 +98,7 @@ export function mapCanonicalToStructured(
     })),
     warningSigns: canonical.warningSigns.map((w) => ({ value: w.value, status: w.status, note: w.evidence })),
     emergencyInstructions: canonical.emergencyInstructions.map((e) => ({ value: e.value, status: e.status, note: e.evidence })),
-    additionalNotes: [],
+    additionalNotes: (canonical.additionalNotes || []).map(note => ({ value: note.value, status: note.status, note: note.evidence })),
     extractionMetadata: metadata,
   };
 }

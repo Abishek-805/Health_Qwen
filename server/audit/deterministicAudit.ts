@@ -3,6 +3,9 @@ import {
   GeneratedReport,
   AuditFinding,
 } from '../../src/types/discharge';
+import { medicationLines, medicationReviewContext } from '../services/medicationText';
+
+export const AUDIT_POLICY_VERSION = '2026-10-20.4';
 
 export function runDeterministicAudit(
   verified: AuthoritativeDischargeData,
@@ -115,7 +118,8 @@ export function runDeterministicAudit(
     const medNameLower = med.name.toLowerCase().trim();
 
     // Check if med name is present in report
-    const isMedPresent = fullText.toLowerCase().includes(medNameLower);
+    const lines = medicationLines(report.sections.medicationInstructions, med.name);
+    const isMedPresent = lines.length > 0;
     if (!isMedPresent) {
       findings.push({
         id: `det-med-omission-${idx}`,
@@ -132,15 +136,21 @@ export function runDeterministicAudit(
       return;
     }
 
+    if (lines.some(line => medicationReviewContext.test(med.instructions ? line.replace(med.instructions, '') : line) || verified.medications.some(other => other !== med && medicationLines(line, other.name).length > 0))) {
+      findings.push({ id: 'det-med-context-' + idx, category: 'MEDICATIONS', categoryName: 'Medications', severity: 'CRITICAL', status: 'CRITICAL_ISSUE',
+        title: 'Medication context requires review', verifiedSourceText: med.name, generatedReportText: lines.join(' '),
+        whyItMatters: 'Stopped, negated, historical or combined medication clauses must be reconciled against the verified source. Use a separate line for each medication.', isDeterministic: true });
+    }
+
     // Compare the first dose attached to this medication, including its unit.
     if (med.dosage && med.dosageStatus === 'FOUND') {
-      const quantity = /\d+(?:\.\d+)?\s*(?:mcg|mg|g|ml|mL|units?|iu|tablets?|capsules?)(?:\s*\/\s*\d*(?:\.\d+)?\s*(?:ml|mL|kg|h))?\b/gi;
-      const expected = med.dosage.match(quantity)?.map(value => value.toLowerCase().replace(/\s/g, '')) || [];
-      const allowed = [...expected, ...(med.instructions.match(quantity)?.map(value => value.toLowerCase().replace(/\s/g, '')) || [])];
-      const lines = report.sections.medicationInstructions.split(/\n/).filter(line => line.toLowerCase().includes(medNameLower));
+      const quantity = /\d+(?:\.\d+)?\s*(?:mcg|µg|μg|mg|g|ml|mL|units?|iu|tablets?|capsules?)(?:\s*\/\s*\d*(?:\.\d+)?\s*(?:ml|mL|kg|h))?\b/gi;
+      const normalizeDose = (value: string) => value.toLowerCase().replace(/[µμ]g/g, 'mcg').replace(/\s/g, '');
+      const expected = med.dosage.match(quantity)?.map(normalizeDose) || [];
+      const allowed = [...expected, ...(med.instructions.match(quantity)?.map(normalizeDose) || [])];
       const matchingDoses = lines.map(line => {
         const start = line.toLowerCase().indexOf(medNameLower);
-        return line.slice(start).match(quantity)?.map(value => value.toLowerCase().replace(/\s/g, '')) || [];
+        return line.slice(start).match(quantity)?.map(normalizeDose) || [];
       });
       if (!expected.length || !matchingDoses.length || matchingDoses.some(doses => expected.some((value, index) => doses[index] !== value) || doses.some(value => !allowed.includes(value)))) {
         findings.push({ id: 'det-med-dose-mismatch-' + idx, category: 'MEDICATIONS', categoryName: 'Medications', severity: 'CRITICAL', status: 'CRITICAL_ISSUE',
@@ -151,10 +161,10 @@ export function runDeterministicAudit(
 
     for (const [key, fieldStatus] of [['frequency', med.frequencyStatus], ['duration', med.durationStatus]] as const) {
       const expected = med[key].trim().toLowerCase().replace(/\s+/g, ' ');
-      const line = report.sections.medicationInstructions.split(/\n/).find(value => value.toLowerCase().includes(medNameLower)) || '';
-      if (fieldStatus === 'FOUND' && expected && !line.toLowerCase().replace(/\s+/g, ' ').includes(expected)) {
+      const expectedPattern = new RegExp('(?<![a-z0-9])' + expected.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![a-z0-9])', 'i');
+      if (fieldStatus === 'FOUND' && expected && lines.some(line => !expectedPattern.test(line.replace(/\s+/g, ' ')))) {
         findings.push({ id: 'det-med-' + key + '-mismatch-' + idx, category: 'MEDICATIONS', categoryName: 'Medications', severity: 'CRITICAL', status: 'CRITICAL_ISSUE',
-          title: 'Medication ' + key + ' differs from verified source', verifiedSourceText: med[key], generatedReportText: line,
+          title: 'Medication ' + key + ' differs from verified source', verifiedSourceText: med[key], generatedReportText: lines.join(' '),
           whyItMatters: 'Preserve the verified medication schedule; review changes against the original source.', isDeterministic: true });
       }
     }
@@ -167,14 +177,12 @@ export function runDeterministicAudit(
       /not provided|missing/i.test(med.frequency);
 
     if (freqMissing) {
-      const sentences = fullText.split(/[\n.]+/);
-      const medSentence = report.sections.medicationInstructions.split(/\n/).find(s => s.toLowerCase().includes(medNameLower)) || '';
+      const medSentence = lines.join('\n');
 
       // Check if generated sentence specifies invented frequency like "twice daily", "2 times", "every 8 hours", "3 times"
       const inventedFreqPattern = /twice|thrice|2 times|3 times|4 times|every \d+ hours|daily|morning and night|bid|tid|qid/i;
-      const neutralPattern = /as directed|as prescribed|per doctor|check prescription/i;
 
-      if (inventedFreqPattern.test(medSentence) && !neutralPattern.test(medSentence)) {
+      if (inventedFreqPattern.test(medSentence)) {
         findings.push({
           id: `det-med-invented-freq-${idx}`,
           category: 'MEDICATIONS',
@@ -237,9 +245,7 @@ export function runDeterministicAudit(
   // 7. OMISSIONS
   if (
     verified.warningSigns.length > 0 &&
-    !report.sections.warningSignsAndEmergency &&
-    !fullText.toLowerCase().includes('warning') &&
-    !fullText.toLowerCase().includes('emergency')
+    verified.warningSigns.some(warning => warning.status === 'FOUND' && warning.value && !report.sections.warningSignsAndEmergency.toLowerCase().includes(warning.value.toLowerCase()))
   ) {
     findings.push({
       id: `det-omission-warning`,
@@ -265,7 +271,7 @@ export function runDeterministicAudit(
         const unit = match[2].toLowerCase();
         // Check if report has same number with wrong unit
         const wrongUnitRegex = new RegExp(`${val}\\s*(?!${unit})(mg|g|mcg|ml|tablets|capsules|units)`, 'i');
-        if (wrongUnitRegex.test(fullText)) {
+        if (medicationLines(report.sections.medicationInstructions, med.name).some(line => wrongUnitRegex.test(line))) {
           findings.push({
             id: `det-num-unit-${idx}`,
             category: 'NUMERIC_VALUES',

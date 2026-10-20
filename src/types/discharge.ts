@@ -32,6 +32,12 @@ export interface FollowUpItem {
   location: string;
   instructions: string;
   status: FieldStatus;
+  providerStatus?: FieldStatus;
+  dateStatus?: FieldStatus;
+  timeStatus?: FieldStatus;
+  locationStatus?: FieldStatus;
+  instructionsStatus?: FieldStatus;
+  sourceSection?: string;
 }
 
 export interface PatientInfo {
@@ -155,6 +161,7 @@ export interface AuditFinding {
 }
 
 export interface AuditResult {
+  policyVersion?: string;
   cloudAuditStatus?: 'disabled' | 'completed' | 'unavailable';
   coverageNote?: string;
   auditId: string;

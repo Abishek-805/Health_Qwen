@@ -20,11 +20,14 @@ export default defineConfig(() => {
     },
     server: {
       host: '127.0.0.1',
+      fs: {
+        deny: ['.env', '.env.*', '*.{crt,pem}', '**/.git/**', '**/.runtime/**', '**/data/**', '**/models/**', '**/*.sqlite*', '**/*.db', '**/*.db-*', '**/*.backup'],
+      },
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modifyâ€”file watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR === 'true' ? false : { host: '127.0.0.1' },
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
-      watch: process.env.DISABLE_HMR === 'true' ? null : { ignored: ['**/.runtime/**', '**/data/**'] },
+      watch: process.env.DISABLE_HMR === 'true' ? null : { ignored: ['**/.runtime/**', '**/data/**', '**/models/**'] },
     },
   };
 });

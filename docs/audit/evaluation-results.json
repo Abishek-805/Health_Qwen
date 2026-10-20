@@ -1,0 +1,4391 @@
+{
+  "schemaVersion": 2,
+  "clinicianReviewed": false,
+  "note": "Fixed author-labelled synthetic corpus v2, 31 cases. One versioned prompt schema change preserves additional notes; model omissions remain. Scores are strict agreement proxies, not adjudicated clinical accuracy. Recorded real predictions were replayed through final evidence validation without replacement or label tuning.",
+  "modelRun": {
+    "datasetVersion": "synthetic-discharge-v2",
+    "repositoryRevision": "374b2d4a42536e2c6b56ec3e50de897a0fb87503",
+    "workingTree": "inspect git diff; revision alone does not identify uncommitted changes",
+    "date": "2026-10-20T08:44:10.883Z",
+    "mode": "pinned-local-model",
+    "modelFilename": "Qwen2.5-1.5B-Instruct-Q4_K_M.gguf",
+    "modelSha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+    "modelRevision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
+    "runtime": "v24.19.0",
+    "nodeLlamaCpp": "3.22.2",
+    "os": "win32 10.0.26200 x64",
+    "cpu": "13th Gen Intel(R) Core(TM) i5-13450HX",
+    "ramBytes": 16873545728,
+    "contextTokens": 8192,
+    "maxOutputTokens": 2048,
+    "temperature": 0.05,
+    "seed": null,
+    "promptVersion": "local-extraction-v2-additional-notes",
+    "promptSourceSha256": "6cdf6a1b3692bf3c8cc29973fa29c728f8af0914b6014f0e15de182bb31b2876",
+    "predictionsSha256": null,
+    "datasetSourceSha256": "92490451d105ac7d6a2d0e9b42a34867a564d92d8604d0a8a7e04e1638248598",
+    "validatorSourceSha256": "fdf4f2c58b2826eb9f95afdf0ddde2ffd40b4b89483b82a114480bfaedac11eb",
+    "metricSourceSha256": "a247cce56273abaa42252c27de150a686a8da4a0d0ee79d41b852917b6b244e9",
+    "lockfileSha256": "d91acb57e2aa87f3fa3a6128dc7d0c3378f69b99e1ef63db01e027673c1a4df6",
+    "totalDatasetCases": 31,
+    "requestedCases": 31,
+    "cloudEnabled": false,
+    "clinicianReviewed": false,
+    "actualBackend": "VULKAN"
+  },
+  "scoringRun": {
+    "datasetVersion": "synthetic-discharge-v2",
+    "repositoryRevision": "374b2d4a42536e2c6b56ec3e50de897a0fb87503",
+    "workingTree": "inspect git diff; revision alone does not identify uncommitted changes",
+    "date": "2026-10-20T09:09:56.888Z",
+    "mode": "imported-synthetic-predictions",
+    "modelFilename": null,
+    "modelSha256": null,
+    "modelRevision": null,
+    "runtime": "v24.19.0",
+    "nodeLlamaCpp": "3.22.2",
+    "os": "win32 10.0.26200 x64",
+    "cpu": "13th Gen Intel(R) Core(TM) i5-13450HX",
+    "ramBytes": 16873545728,
+    "contextTokens": null,
+    "maxOutputTokens": null,
+    "temperature": null,
+    "seed": null,
+    "promptVersion": null,
+    "promptSourceSha256": "6cdf6a1b3692bf3c8cc29973fa29c728f8af0914b6014f0e15de182bb31b2876",
+    "predictionsSha256": "97d1e6a30a604114fa46bc7d6afc5a1da5ea08fff81866e4250de30e7655be67",
+    "datasetSourceSha256": "92490451d105ac7d6a2d0e9b42a34867a564d92d8604d0a8a7e04e1638248598",
+    "validatorSourceSha256": "2828247fe13f4e10808f274e8f40b162ba37748a6611061cf1515266aa226cc7",
+    "metricSourceSha256": "a247cce56273abaa42252c27de150a686a8da4a0d0ee79d41b852917b6b244e9",
+    "lockfileSha256": "d91acb57e2aa87f3fa3a6128dc7d0c3378f69b99e1ef63db01e027673c1a4df6",
+    "totalDatasetCases": 31,
+    "requestedCases": 31,
+    "cloudEnabled": false,
+    "clinicianReviewed": false,
+    "actualBackend": "Not initialized"
+  },
+  "attemptedCases": 31,
+  "completedCases": 31,
+  "errorCases": 0,
+  "stages": {
+    "raw": {
+      "correct": 94,
+      "valueCorrect": 199,
+      "valueAccuracy": 0.8396624472573839,
+      "total": 237,
+      "exactFieldAccuracy": 0.39662447257383965,
+      "missingPredictions": 30,
+      "truePositive": 1,
+      "falsePositive": 2,
+      "falseNegative": 122,
+      "precision": 0.3333333333333333,
+      "recall": 0.008130081300813009,
+      "f1": 0.015873015873015872,
+      "unsupportedAssertionRate": 0.6666666666666666,
+      "omissionRate": 0.991869918699187,
+      "incorrectCertainty": 0,
+      "unclearPrecision": 0.043795620437956206,
+      "unclearRecall": 0.5,
+      "allergyStateCorrect": 27,
+      "allergyStateTotal": 31,
+      "allergyStateAccuracy": 0.8709677419354839
+    },
+    "validated": {
+      "correct": 94,
+      "valueCorrect": 199,
+      "valueAccuracy": 0.8396624472573839,
+      "total": 237,
+      "exactFieldAccuracy": 0.39662447257383965,
+      "missingPredictions": 30,
+      "truePositive": 1,
+      "falsePositive": 2,
+      "falseNegative": 122,
+      "precision": 0.3333333333333333,
+      "recall": 0.008130081300813009,
+      "f1": 0.015873015873015872,
+      "unsupportedAssertionRate": 0.6666666666666666,
+      "omissionRate": 0.991869918699187,
+      "incorrectCertainty": 0,
+      "unclearPrecision": 0.043795620437956206,
+      "unclearRecall": 0.5,
+      "allergyStateCorrect": 27,
+      "allergyStateTotal": 31,
+      "allergyStateAccuracy": 0.8709677419354839
+    }
+  },
+  "latency": {
+    "firstCaseMs": 9637,
+    "modelLoadMs": 3903,
+    "minimumCaseMs": 2290,
+    "medianCaseMs": 3406,
+    "maximumCaseMs": 9637,
+    "summedCaseMs": 113618.0
+  },
+  "runtimeMetricNotes": {
+    "totalTokens": "Existing runtime character-count approximation of output tokens; not an exact measured token count",
+    "tokensPerSec": "Derived from that approximation, not exact tokenizer throughput",
+    "systemRamUsedMb": "Positive JavaScript heap delta, not native/process peak memory",
+    "vramUsedMb": "Runtime-reported VRAM snapshot, not isolated process peak or GPU utilization"
+  },
+  "pipeline": {
+    "datasetVersion": "synthetic-pipeline-v1",
+    "auditPolicyVersion": "2026-10-20.4",
+    "date": "2026-10-20T09:10:26.674Z",
+    "clinicianReviewed": false,
+    "auditCases": 9,
+    "criticalCategoryPrecision": 1,
+    "criticalCategoryRecall": 1,
+    "truePositive": 9,
+    "falsePositive": 0,
+    "falseNegative": 0,
+    "blockingVerdictsCorrect": 9,
+    "pdfSectionMarkers": 8,
+    "expectedPdfSectionMarkers": 8,
+    "ocr": null,
+    "notMeasured": [
+      "clinical acceptance",
+      "human source verification",
+      "end-to-end browser approval in this evaluator"
+    ],
+    "results": [
+      {
+        "id": "unchanged-template",
+        "expectedCriticalCategories": [],
+        "actualCriticalCategories": [],
+        "blockingVerdictCorrect": true,
+        "unevaluatedCategories": 6,
+        "passCountCorrect": true
+      },
+      {
+        "id": "patient-id",
+        "expectedCriticalCategories": [
+          "PATIENT_INFORMATION"
+        ],
+        "actualCriticalCategories": [
+          "PATIENT_INFORMATION"
+        ],
+        "blockingVerdictCorrect": true,
+        "unevaluatedCategories": 6,
+        "passCountCorrect": true
+      },
+      {
+        "id": "medication-dose",
+        "expectedCriticalCategories": [
+          "MEDICATIONS"
+        ],
+        "actualCriticalCategories": [
+          "MEDICATIONS"
+        ],
+        "blockingVerdictCorrect": true,
+        "unevaluatedCategories": 6,
+        "passCountCorrect": true
+      },
+      {
+        "id": "medication-unit",
+        "expectedCriticalCategories": [
+          "MEDICATIONS",
+          "NUMERIC_VALUES"
+        ],
+        "actualCriticalCategories": [
+          "MEDICATIONS",
+          "NUMERIC_VALUES"
+        ],
+        "blockingVerdictCorrect": true,
+        "unevaluatedCategories": 6,
+        "passCountCorrect": true
+      },
+      {
+        "id": "medication-frequency",
+        "expectedCriticalCategories": [
+          "MEDICATIONS"
+        ],
+        "actualCriticalCategories": [
+          "MEDICATIONS"
+        ],
+        "blockingVerdictCorrect": true,
+        "unevaluatedCategories": 6,
+        "passCountCorrect": true
+      },
+      {
+        "id": "medication-duration",
+        "expectedCriticalCategories": [
+          "MEDICATIONS"
+        ],
+        "actualCriticalCategories": [
+          "MEDICATIONS"
+        ],
+        "blockingVerdictCorrect": true,
+        "unevaluatedCategories": 6,
+        "passCountCorrect": true
+      },
+      {
+        "id": "negated-medication",
+        "expectedCriticalCategories": [
+          "MEDICATIONS"
+        ],
+        "actualCriticalCategories": [
+          "MEDICATIONS"
+        ],
+        "blockingVerdictCorrect": true,
+        "unevaluatedCategories": 6,
+        "passCountCorrect": true
+      },
+      {
+        "id": "allergy-omission",
+        "expectedCriticalCategories": [
+          "ALLERGIES"
+        ],
+        "actualCriticalCategories": [
+          "ALLERGIES"
+        ],
+        "blockingVerdictCorrect": true,
+        "unevaluatedCategories": 6,
+        "passCountCorrect": true
+      },
+      {
+        "id": "warning-omission",
+        "expectedCriticalCategories": [
+          "OMISSIONS"
+        ],
+        "actualCriticalCategories": [
+          "OMISSIONS"
+        ],
+        "blockingVerdictCorrect": true,
+        "unevaluatedCategories": 6,
+        "passCountCorrect": true
+      }
+    ]
+  },
+  "ocrMeasurement": {
+    "cases": 1,
+    "characterErrorRate": 0,
+    "wordErrorRate": 0,
+    "latencyMs": 2616,
+    "engine": "tesseract-ocr"
+  },
+  "perCase": [
+    {
+      "id": "identity-role",
+      "raw": {
+        "correct": 2,
+        "valueCorrect": 5,
+        "valueAccuracy": 1,
+        "total": 5,
+        "exactFieldAccuracy": 0.4,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 3,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 3,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "duration": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "validated": {
+        "correct": 2,
+        "valueCorrect": 5,
+        "valueAccuracy": 1,
+        "total": 5,
+        "exactFieldAccuracy": 0.4,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 3,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 3,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "duration": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "evidenceSupportedRate": null,
+      "latencyMs": 9637,
+      "runtimeMetrics": {
+        "device": "VULKAN",
+        "vramUsedMb": 2166,
+        "systemRamUsedMb": 14,
+        "loadTimeMs": 3903,
+        "inferenceTimeMs": 4439,
+        "totalTokens": 244,
+        "tokensPerSec": 55,
+        "geminiApiCalls": 0
+      }
+    },
+    {
+      "id": "missing-identifier",
+      "raw": {
+        "correct": 3,
+        "valueCorrect": 4,
+        "valueAccuracy": 0.8,
+        "total": 5,
+        "exactFieldAccuracy": 0.6,
+        "missingPredictions": 1,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 2,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 2,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "duration": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "validated": {
+        "correct": 3,
+        "valueCorrect": 4,
+        "valueAccuracy": 0.8,
+        "total": 5,
+        "exactFieldAccuracy": 0.6,
+        "missingPredictions": 1,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 2,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 2,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "duration": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "evidenceSupportedRate": null,
+      "latencyMs": 2749,
+      "runtimeMetrics": {
+        "device": "VULKAN",
+        "vramUsedMb": 2166,
+        "systemRamUsedMb": 0,
+        "loadTimeMs": 3903,
+        "inferenceTimeMs": 2635,
+        "totalTokens": 134,
+        "tokensPerSec": 50.9,
+        "geminiApiCalls": 0
+      }
+    },
+    {
+      "id": "decimal-dose",
+      "raw": {
+        "correct": 3,
+        "valueCorrect": 9,
+        "valueAccuracy": 1,
+        "total": 9,
+        "exactFieldAccuracy": 0.3333333333333333,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 6,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 6,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "duration": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "validated": {
+        "correct": 3,
+        "valueCorrect": 9,
+        "valueAccuracy": 1,
+        "total": 9,
+        "exactFieldAccuracy": 0.3333333333333333,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 6,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 6,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "duration": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "evidenceSupportedRate": null,
+      "latencyMs": 2356,
+      "runtimeMetrics": {
+        "device": "VULKAN",
+        "vramUsedMb": 2178,
+        "systemRamUsedMb": 0,
+        "loadTimeMs": 3903,
+        "inferenceTimeMs": 2239,
+        "totalTokens": 96,
+        "tokensPerSec": 42.9,
+        "geminiApiCalls": 0
+      }
+    },
+    {
+      "id": "multiple-medications",
+      "raw": {
+        "correct": 4,
+        "valueCorrect": 14,
+        "valueAccuracy": 1,
+        "total": 14,
+        "exactFieldAccuracy": 0.2857142857142857,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 10,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 10,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 2,
+            "accuracy": 0
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 2,
+            "accuracy": 0
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 2,
+            "accuracy": 0
+          },
+          "duration": {
+            "correct": 0,
+            "total": 2,
+            "accuracy": 0
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "validated": {
+        "correct": 4,
+        "valueCorrect": 14,
+        "valueAccuracy": 1,
+        "total": 14,
+        "exactFieldAccuracy": 0.2857142857142857,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 10,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 10,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 2,
+            "accuracy": 0
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 2,
+            "accuracy": 0
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 2,
+            "accuracy": 0
+          },
+          "duration": {
+            "correct": 0,
+            "total": 2,
+            "accuracy": 0
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "evidenceSupportedRate": null,
+      "latencyMs": 4150,
+      "runtimeMetrics": {
+        "device": "VULKAN",
+        "vramUsedMb": 2178,
+        "systemRamUsedMb": 4,
+        "loadTimeMs": 3903,
+        "inferenceTimeMs": 4017,
+        "totalTokens": 228,
+        "tokensPerSec": 56.8,
+        "geminiApiCalls": 0
+      }
+    },
+    {
+      "id": "missing-dose",
+      "raw": {
+        "correct": 6,
+        "valueCorrect": 9,
+        "valueAccuracy": 1,
+        "total": 9,
+        "exactFieldAccuracy": 0.6666666666666666,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 3,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 3,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "dosage": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "frequency": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "duration": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "validated": {
+        "correct": 6,
+        "valueCorrect": 9,
+        "valueAccuracy": 1,
+        "total": 9,
+        "exactFieldAccuracy": 0.6666666666666666,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 3,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 3,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "dosage": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "frequency": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "duration": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "evidenceSupportedRate": null,
+      "latencyMs": 3406,
+      "runtimeMetrics": {
+        "device": "VULKAN",
+        "vramUsedMb": 2178,
+        "systemRamUsedMb": 0,
+        "loadTimeMs": 3903,
+        "inferenceTimeMs": 3258,
+        "totalTokens": 170,
+        "tokensPerSec": 52.2,
+        "geminiApiCalls": 0
+      }
+    },
+    {
+      "id": "missing-frequency-duration",
+      "raw": {
+        "correct": 2,
+        "valueCorrect": 4,
+        "valueAccuracy": 0.4444444444444444,
+        "total": 9,
+        "exactFieldAccuracy": 0.2222222222222222,
+        "missingPredictions": 5,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 4,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 3,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "duration": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "validated": {
+        "correct": 2,
+        "valueCorrect": 4,
+        "valueAccuracy": 0.4444444444444444,
+        "total": 9,
+        "exactFieldAccuracy": 0.2222222222222222,
+        "missingPredictions": 5,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 4,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 3,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "duration": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "evidenceSupportedRate": null,
+      "latencyMs": 2340,
+      "runtimeMetrics": {
+        "device": "VULKAN",
+        "vramUsedMb": 2178,
+        "systemRamUsedMb": 0,
+        "loadTimeMs": 3903,
+        "inferenceTimeMs": 2115,
+        "totalTokens": 91,
+        "tokensPerSec": 43,
+        "geminiApiCalls": 0
+      }
+    },
+    {
+      "id": "route-and-stop",
+      "raw": {
+        "correct": 2,
+        "valueCorrect": 9,
+        "valueAccuracy": 1,
+        "total": 9,
+        "exactFieldAccuracy": 0.2222222222222222,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 7,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 7,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "duration": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "validated": {
+        "correct": 2,
+        "valueCorrect": 9,
+        "valueAccuracy": 1,
+        "total": 9,
+        "exactFieldAccuracy": 0.2222222222222222,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 7,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 7,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "duration": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "evidenceSupportedRate": null,
+      "latencyMs": 2290,
+      "runtimeMetrics": {
+        "device": "VULKAN",
+        "vramUsedMb": 2178,
+        "systemRamUsedMb": 0,
+        "loadTimeMs": 3903,
+        "inferenceTimeMs": 2137,
+        "totalTokens": 100,
+        "tokensPerSec": 46.8,
+        "geminiApiCalls": 0
+      }
+    },
+    {
+      "id": "discontinued-medication",
+      "raw": {
+        "correct": 6,
+        "valueCorrect": 8,
+        "valueAccuracy": 0.8888888888888888,
+        "total": 9,
+        "exactFieldAccuracy": 0.6666666666666666,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 2,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 2,
+        "unclearPredicted": 5,
+        "unclearExpected": 2,
+        "unclearPrecision": 0.4,
+        "unclearRecall": 1,
+        "fieldGroups": {
+          "name": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "dosage": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "frequency": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "duration": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "validated": {
+        "correct": 6,
+        "valueCorrect": 8,
+        "valueAccuracy": 0.8888888888888888,
+        "total": 9,
+        "exactFieldAccuracy": 0.6666666666666666,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 2,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 2,
+        "unclearPredicted": 5,
+        "unclearExpected": 2,
+        "unclearPrecision": 0.4,
+        "unclearRecall": 1,
+        "fieldGroups": {
+          "name": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "dosage": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "frequency": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "duration": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "evidenceSupportedRate": null,
+      "latencyMs": 3648,
+      "runtimeMetrics": {
+        "device": "VULKAN",
+        "vramUsedMb": 2178,
+        "systemRamUsedMb": 0,
+        "loadTimeMs": 3903,
+        "inferenceTimeMs": 3540,
+        "totalTokens": 187,
+        "tokensPerSec": 52.8,
+        "geminiApiCalls": 0
+      }
+    },
+    {
+      "id": "historical-medication",
+      "raw": {
+        "correct": 2,
+        "valueCorrect": 4,
+        "valueAccuracy": 0.4444444444444444,
+        "total": 9,
+        "exactFieldAccuracy": 0.2222222222222222,
+        "missingPredictions": 5,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 2,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 4,
+        "unclearExpected": 2,
+        "unclearPrecision": 0,
+        "unclearRecall": 0,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "duration": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "validated": {
+        "correct": 2,
+        "valueCorrect": 4,
+        "valueAccuracy": 0.4444444444444444,
+        "total": 9,
+        "exactFieldAccuracy": 0.2222222222222222,
+        "missingPredictions": 5,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 2,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 4,
+        "unclearExpected": 2,
+        "unclearPrecision": 0,
+        "unclearRecall": 0,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "duration": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "evidenceSupportedRate": null,
+      "latencyMs": 4787,
+      "runtimeMetrics": {
+        "device": "VULKAN",
+        "vramUsedMb": 2178,
+        "systemRamUsedMb": 2,
+        "loadTimeMs": 3903,
+        "inferenceTimeMs": 4678,
+        "totalTokens": 249,
+        "tokensPerSec": 53.2,
+        "geminiApiCalls": 0
+      }
+    },
+    {
+      "id": "negated-medication",
+      "raw": {
+        "correct": 6,
+        "valueCorrect": 8,
+        "valueAccuracy": 0.8888888888888888,
+        "total": 9,
+        "exactFieldAccuracy": 0.6666666666666666,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 2,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 2,
+        "unclearPredicted": 5,
+        "unclearExpected": 2,
+        "unclearPrecision": 0.4,
+        "unclearRecall": 1,
+        "fieldGroups": {
+          "name": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "dosage": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "frequency": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "duration": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "validated": {
+        "correct": 6,
+        "valueCorrect": 8,
+        "valueAccuracy": 0.8888888888888888,
+        "total": 9,
+        "exactFieldAccuracy": 0.6666666666666666,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 2,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 2,
+        "unclearPredicted": 5,
+        "unclearExpected": 2,
+        "unclearPrecision": 0.4,
+        "unclearRecall": 1,
+        "fieldGroups": {
+          "name": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "dosage": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "frequency": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "duration": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "evidenceSupportedRate": null,
+      "latencyMs": 4090,
+      "runtimeMetrics": {
+        "device": "VULKAN",
+        "vramUsedMb": 2178,
+        "systemRamUsedMb": 3,
+        "loadTimeMs": 3903,
+        "inferenceTimeMs": 3868,
+        "totalTokens": 176,
+        "tokensPerSec": 45.5,
+        "geminiApiCalls": 0
+      }
+    },
+    {
+      "id": "conflicting-prescriptions",
+      "raw": {
+        "correct": 2,
+        "valueCorrect": 4,
+        "valueAccuracy": 0.4444444444444444,
+        "total": 9,
+        "exactFieldAccuracy": 0.2222222222222222,
+        "missingPredictions": 5,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 2,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 8,
+        "unclearExpected": 1,
+        "unclearPrecision": 0,
+        "unclearRecall": 0,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "duration": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "validated": {
+        "correct": 2,
+        "valueCorrect": 4,
+        "valueAccuracy": 0.4444444444444444,
+        "total": 9,
+        "exactFieldAccuracy": 0.2222222222222222,
+        "missingPredictions": 5,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 2,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 8,
+        "unclearExpected": 1,
+        "unclearPrecision": 0,
+        "unclearRecall": 0,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "duration": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "evidenceSupportedRate": null,
+      "latencyMs": 3591,
+      "runtimeMetrics": {
+        "device": "VULKAN",
+        "vramUsedMb": 2178,
+        "systemRamUsedMb": 0,
+        "loadTimeMs": 3903,
+        "inferenceTimeMs": 3409,
+        "totalTokens": 151,
+        "tokensPerSec": 44.3,
+        "geminiApiCalls": 0
+      }
+    },
+    {
+      "id": "unrelated-number",
+      "raw": {
+        "correct": 5,
+        "valueCorrect": 8,
+        "valueAccuracy": 0.8888888888888888,
+        "total": 9,
+        "exactFieldAccuracy": 0.5555555555555556,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 3,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 4,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "frequency": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "duration": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "validated": {
+        "correct": 5,
+        "valueCorrect": 8,
+        "valueAccuracy": 0.8888888888888888,
+        "total": 9,
+        "exactFieldAccuracy": 0.5555555555555556,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 3,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 4,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "frequency": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "duration": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "evidenceSupportedRate": null,
+      "latencyMs": 3885,
+      "runtimeMetrics": {
+        "device": "VULKAN",
+        "vramUsedMb": 2178,
+        "systemRamUsedMb": 1,
+        "loadTimeMs": 3903,
+        "inferenceTimeMs": 3724,
+        "totalTokens": 172,
+        "tokensPerSec": 46.2,
+        "geminiApiCalls": 0
+      }
+    },
+    {
+      "id": "explicit-allergy",
+      "raw": {
+        "correct": 2,
+        "valueCorrect": 4,
+        "valueAccuracy": 0.8,
+        "total": 5,
+        "exactFieldAccuracy": 0.4,
+        "missingPredictions": 1,
+        "truePositive": 0,
+        "falsePositive": 1,
+        "falseNegative": 3,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": 1,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 6,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "duration": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "positive",
+          "predicted": "positive",
+          "correct": true
+        }
+      },
+      "validated": {
+        "correct": 2,
+        "valueCorrect": 4,
+        "valueAccuracy": 0.8,
+        "total": 5,
+        "exactFieldAccuracy": 0.4,
+        "missingPredictions": 1,
+        "truePositive": 0,
+        "falsePositive": 1,
+        "falseNegative": 3,
+        "precision": 0,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": 1,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 6,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "duration": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "positive",
+          "predicted": "positive",
+          "correct": true
+        }
+      },
+      "evidenceSupportedRate": 1,
+      "latencyMs": 5652,
+      "runtimeMetrics": {
+        "device": "VULKAN",
+        "vramUsedMb": 2178,
+        "systemRamUsedMb": 1,
+        "loadTimeMs": 3903,
+        "inferenceTimeMs": 5416,
+        "totalTokens": 276,
+        "tokensPerSec": 51,
+        "geminiApiCalls": 0
+      }
+    },
+    {
+      "id": "explicit-negative-allergy",
+      "raw": {
+        "correct": 2,
+        "valueCorrect": 4,
+        "valueAccuracy": 0.8,
+        "total": 5,
+        "exactFieldAccuracy": 0.4,
+        "missingPredictions": 1,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 3,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 2,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "duration": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "explicit-negative",
+          "predicted": "missing",
+          "correct": false
+        }
+      },
+      "validated": {
+        "correct": 2,
+        "valueCorrect": 4,
+        "valueAccuracy": 0.8,
+        "total": 5,
+        "exactFieldAccuracy": 0.4,
+        "missingPredictions": 1,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 3,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 2,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "duration": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "explicit-negative",
+          "predicted": "missing",
+          "correct": false
+        }
+      },
+      "evidenceSupportedRate": null,
+      "latencyMs": 3057,
+      "runtimeMetrics": {
+        "device": "VULKAN",
+        "vramUsedMb": 2178,
+        "systemRamUsedMb": 0,
+        "loadTimeMs": 3903,
+        "inferenceTimeMs": 2910,
+        "totalTokens": 126,
+        "tokensPerSec": 43.3,
+        "geminiApiCalls": 0
+      }
+    },
+    {
+      "id": "missing-allergies",
+      "raw": {
+        "correct": 2,
+        "valueCorrect": 4,
+        "valueAccuracy": 0.8,
+        "total": 5,
+        "exactFieldAccuracy": 0.4,
+        "missingPredictions": 1,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 3,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 3,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "duration": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "validated": {
+        "correct": 2,
+        "valueCorrect": 4,
+        "valueAccuracy": 0.8,
+        "total": 5,
+        "exactFieldAccuracy": 0.4,
+        "missingPredictions": 1,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 3,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 3,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "duration": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "evidenceSupportedRate": null,
+      "latencyMs": 3266,
+      "runtimeMetrics": {
+        "device": "VULKAN",
+        "vramUsedMb": 2178,
+        "systemRamUsedMb": 0,
+        "loadTimeMs": 3903,
+        "inferenceTimeMs": 3104,
+        "totalTokens": 136,
+        "tokensPerSec": 43.8,
+        "geminiApiCalls": 0
+      }
+    },
+    {
+      "id": "unknown-allergies",
+      "raw": {
+        "correct": 2,
+        "valueCorrect": 4,
+        "valueAccuracy": 0.8,
+        "total": 5,
+        "exactFieldAccuracy": 0.4,
+        "missingPredictions": 1,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 2,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 2,
+        "unclearExpected": 1,
+        "unclearPrecision": 0,
+        "unclearRecall": 0,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "duration": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "unknown",
+          "predicted": "missing",
+          "correct": false
+        }
+      },
+      "validated": {
+        "correct": 2,
+        "valueCorrect": 4,
+        "valueAccuracy": 0.8,
+        "total": 5,
+        "exactFieldAccuracy": 0.4,
+        "missingPredictions": 1,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 2,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 2,
+        "unclearExpected": 1,
+        "unclearPrecision": 0,
+        "unclearRecall": 0,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "duration": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "unknown",
+          "predicted": "missing",
+          "correct": false
+        }
+      },
+      "evidenceSupportedRate": null,
+      "latencyMs": 3041,
+      "runtimeMetrics": {
+        "device": "VULKAN",
+        "vramUsedMb": 2178,
+        "systemRamUsedMb": 0,
+        "loadTimeMs": 3903,
+        "inferenceTimeMs": 2920,
+        "totalTokens": 126,
+        "tokensPerSec": 43.2,
+        "geminiApiCalls": 0
+      }
+    },
+    {
+      "id": "conflicting-allergies",
+      "raw": {
+        "correct": 3,
+        "valueCorrect": 5,
+        "valueAccuracy": 0.8333333333333334,
+        "total": 6,
+        "exactFieldAccuracy": 0.5,
+        "missingPredictions": 1,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 2,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 1,
+        "unclearPredicted": 3,
+        "unclearExpected": 2,
+        "unclearPrecision": 0.3333333333333333,
+        "unclearRecall": 0.5,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "duration": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "allergies": {
+            "correct": 1,
+            "total": 2,
+            "accuracy": 0.5
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "conflicting",
+          "predicted": "unclear",
+          "correct": false
+        }
+      },
+      "validated": {
+        "correct": 3,
+        "valueCorrect": 5,
+        "valueAccuracy": 0.8333333333333334,
+        "total": 6,
+        "exactFieldAccuracy": 0.5,
+        "missingPredictions": 1,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 2,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 1,
+        "unclearPredicted": 3,
+        "unclearExpected": 2,
+        "unclearPrecision": 0.3333333333333333,
+        "unclearRecall": 0.5,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "duration": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "allergies": {
+            "correct": 1,
+            "total": 2,
+            "accuracy": 0.5
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "conflicting",
+          "predicted": "unclear",
+          "correct": false
+        }
+      },
+      "evidenceSupportedRate": null,
+      "latencyMs": 3184,
+      "runtimeMetrics": {
+        "device": "VULKAN",
+        "vramUsedMb": 2178,
+        "systemRamUsedMb": 0,
+        "loadTimeMs": 3903,
+        "inferenceTimeMs": 3024,
+        "totalTokens": 132,
+        "tokensPerSec": 43.7,
+        "geminiApiCalls": 0
+      }
+    },
+    {
+      "id": "absolute-follow-up",
+      "raw": {
+        "correct": 3,
+        "valueCorrect": 9,
+        "valueAccuracy": 1,
+        "total": 9,
+        "exactFieldAccuracy": 0.3333333333333333,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 6,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 6,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "duration": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 1,
+            "total": 5,
+            "accuracy": 0.2
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "validated": {
+        "correct": 3,
+        "valueCorrect": 9,
+        "valueAccuracy": 1,
+        "total": 9,
+        "exactFieldAccuracy": 0.3333333333333333,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 6,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 6,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "duration": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 1,
+            "total": 5,
+            "accuracy": 0.2
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "evidenceSupportedRate": null,
+      "latencyMs": 2837,
+      "runtimeMetrics": {
+        "device": "VULKAN",
+        "vramUsedMb": 2178,
+        "systemRamUsedMb": 0,
+        "loadTimeMs": 3903,
+        "inferenceTimeMs": 2661,
+        "totalTokens": 101,
+        "tokensPerSec": 38,
+        "geminiApiCalls": 0
+      }
+    },
+    {
+      "id": "relative-follow-up",
+      "raw": {
+        "correct": 5,
+        "valueCorrect": 9,
+        "valueAccuracy": 1,
+        "total": 9,
+        "exactFieldAccuracy": 0.5555555555555556,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 4,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 4,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "duration": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 3,
+            "total": 5,
+            "accuracy": 0.6
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "validated": {
+        "correct": 5,
+        "valueCorrect": 9,
+        "valueAccuracy": 1,
+        "total": 9,
+        "exactFieldAccuracy": 0.5555555555555556,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 4,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 4,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "duration": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 3,
+            "total": 5,
+            "accuracy": 0.6
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "evidenceSupportedRate": null,
+      "latencyMs": 2538,
+      "runtimeMetrics": {
+        "device": "VULKAN",
+        "vramUsedMb": 2178,
+        "systemRamUsedMb": 3,
+        "loadTimeMs": 3903,
+        "inferenceTimeMs": 2381,
+        "totalTokens": 97,
+        "tokensPerSec": 40.7,
+        "geminiApiCalls": 0
+      }
+    },
+    {
+      "id": "care-and-warning",
+      "raw": {
+        "correct": 2,
+        "valueCorrect": 4,
+        "valueAccuracy": 0.4444444444444444,
+        "total": 9,
+        "exactFieldAccuracy": 0.2222222222222222,
+        "missingPredictions": 5,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 7,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 2,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "duration": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "validated": {
+        "correct": 2,
+        "valueCorrect": 4,
+        "valueAccuracy": 0.4444444444444444,
+        "total": 9,
+        "exactFieldAccuracy": 0.2222222222222222,
+        "missingPredictions": 5,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 7,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 2,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "duration": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "evidenceSupportedRate": null,
+      "latencyMs": 3528,
+      "runtimeMetrics": {
+        "device": "VULKAN",
+        "vramUsedMb": 2178,
+        "systemRamUsedMb": 0,
+        "loadTimeMs": 3903,
+        "inferenceTimeMs": 3353,
+        "totalTokens": 163,
+        "tokensPerSec": 48.6,
+        "geminiApiCalls": 0
+      }
+    },
+    {
+      "id": "broken-wrapping",
+      "raw": {
+        "correct": 3,
+        "valueCorrect": 8,
+        "valueAccuracy": 0.8888888888888888,
+        "total": 9,
+        "exactFieldAccuracy": 0.3333333333333333,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 6,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 6,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "duration": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "validated": {
+        "correct": 3,
+        "valueCorrect": 8,
+        "valueAccuracy": 0.8888888888888888,
+        "total": 9,
+        "exactFieldAccuracy": 0.3333333333333333,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 6,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 6,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "duration": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "evidenceSupportedRate": null,
+      "latencyMs": 2697,
+      "runtimeMetrics": {
+        "device": "VULKAN",
+        "vramUsedMb": 2178,
+        "systemRamUsedMb": 0,
+        "loadTimeMs": 3903,
+        "inferenceTimeMs": 2528,
+        "totalTokens": 98,
+        "tokensPerSec": 38.8,
+        "geminiApiCalls": 0
+      }
+    },
+    {
+      "id": "duplicate-paragraphs",
+      "raw": {
+        "correct": 2,
+        "valueCorrect": 4,
+        "valueAccuracy": 0.8,
+        "total": 5,
+        "exactFieldAccuracy": 0.4,
+        "missingPredictions": 1,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 3,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 4,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "duration": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "validated": {
+        "correct": 2,
+        "valueCorrect": 4,
+        "valueAccuracy": 0.8,
+        "total": 5,
+        "exactFieldAccuracy": 0.4,
+        "missingPredictions": 1,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 3,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 4,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "duration": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "evidenceSupportedRate": null,
+      "latencyMs": 5276,
+      "runtimeMetrics": {
+        "device": "VULKAN",
+        "vramUsedMb": 2178,
+        "systemRamUsedMb": 4,
+        "loadTimeMs": 3903,
+        "inferenceTimeMs": 5105,
+        "totalTokens": 254,
+        "tokensPerSec": 49.8,
+        "geminiApiCalls": 0
+      }
+    },
+    {
+      "id": "truncated-source",
+      "raw": {
+        "correct": 4,
+        "valueCorrect": 8,
+        "valueAccuracy": 0.8888888888888888,
+        "total": 9,
+        "exactFieldAccuracy": 0.4444444444444444,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 4,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 5,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "duration": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "validated": {
+        "correct": 4,
+        "valueCorrect": 8,
+        "valueAccuracy": 0.8888888888888888,
+        "total": 9,
+        "exactFieldAccuracy": 0.4444444444444444,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 4,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 5,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "duration": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "evidenceSupportedRate": null,
+      "latencyMs": 2669,
+      "runtimeMetrics": {
+        "device": "VULKAN",
+        "vramUsedMb": 2178,
+        "systemRamUsedMb": 0,
+        "loadTimeMs": 3903,
+        "inferenceTimeMs": 2444,
+        "totalTokens": 92,
+        "tokensPerSec": 37.6,
+        "geminiApiCalls": 0
+      }
+    },
+    {
+      "id": "source-prompt-injection",
+      "raw": {
+        "correct": 2,
+        "valueCorrect": 4,
+        "valueAccuracy": 0.8,
+        "total": 5,
+        "exactFieldAccuracy": 0.4,
+        "missingPredictions": 1,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 3,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 5,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "duration": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "unclear",
+          "correct": false
+        }
+      },
+      "validated": {
+        "correct": 2,
+        "valueCorrect": 4,
+        "valueAccuracy": 0.8,
+        "total": 5,
+        "exactFieldAccuracy": 0.4,
+        "missingPredictions": 1,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 3,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 5,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "duration": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "unclear",
+          "correct": false
+        }
+      },
+      "evidenceSupportedRate": null,
+      "latencyMs": 3763,
+      "runtimeMetrics": {
+        "device": "VULKAN",
+        "vramUsedMb": 2178,
+        "systemRamUsedMb": 0,
+        "loadTimeMs": 3903,
+        "inferenceTimeMs": 3531,
+        "totalTokens": 162,
+        "tokensPerSec": 45.9,
+        "geminiApiCalls": 0
+      }
+    },
+    {
+      "id": "demographics-and-footer",
+      "raw": {
+        "correct": 0,
+        "valueCorrect": 4,
+        "valueAccuracy": 1,
+        "total": 4,
+        "exactFieldAccuracy": 0,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 4,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 4,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "duration": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "validated": {
+        "correct": 0,
+        "valueCorrect": 4,
+        "valueAccuracy": 1,
+        "total": 4,
+        "exactFieldAccuracy": 0,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 4,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 4,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "duration": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "evidenceSupportedRate": null,
+      "latencyMs": 3106,
+      "runtimeMetrics": {
+        "device": "VULKAN",
+        "vramUsedMb": 2178,
+        "systemRamUsedMb": 1,
+        "loadTimeMs": 3903,
+        "inferenceTimeMs": 2990,
+        "totalTokens": 128,
+        "tokensPerSec": 42.8,
+        "geminiApiCalls": 0
+      }
+    },
+    {
+      "id": "ocr-character-ambiguity",
+      "raw": {
+        "correct": 5,
+        "valueCorrect": 8,
+        "valueAccuracy": 0.8888888888888888,
+        "total": 9,
+        "exactFieldAccuracy": 0.5555555555555556,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 3,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 1,
+        "unclearPredicted": 5,
+        "unclearExpected": 1,
+        "unclearPrecision": 0.2,
+        "unclearRecall": 1,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "dosage": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "frequency": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "duration": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "validated": {
+        "correct": 5,
+        "valueCorrect": 8,
+        "valueAccuracy": 0.8888888888888888,
+        "total": 9,
+        "exactFieldAccuracy": 0.5555555555555556,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 3,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 1,
+        "unclearPredicted": 5,
+        "unclearExpected": 1,
+        "unclearPrecision": 0.2,
+        "unclearRecall": 1,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "dosage": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "frequency": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "duration": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "evidenceSupportedRate": null,
+      "latencyMs": 4182,
+      "runtimeMetrics": {
+        "device": "VULKAN",
+        "vramUsedMb": 2178,
+        "systemRamUsedMb": 3,
+        "loadTimeMs": 3903,
+        "inferenceTimeMs": 4018,
+        "totalTokens": 189,
+        "tokensPerSec": 47,
+        "geminiApiCalls": 0
+      }
+    },
+    {
+      "id": "long-valid-source",
+      "raw": {
+        "correct": 3,
+        "valueCorrect": 9,
+        "valueAccuracy": 1,
+        "total": 9,
+        "exactFieldAccuracy": 0.3333333333333333,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 6,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 6,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "duration": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "validated": {
+        "correct": 3,
+        "valueCorrect": 9,
+        "valueAccuracy": 1,
+        "total": 9,
+        "exactFieldAccuracy": 0.3333333333333333,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 6,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 6,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "duration": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "evidenceSupportedRate": null,
+      "latencyMs": 4349,
+      "runtimeMetrics": {
+        "device": "VULKAN",
+        "vramUsedMb": 2178,
+        "systemRamUsedMb": 4,
+        "loadTimeMs": 3903,
+        "inferenceTimeMs": 4191,
+        "totalTokens": 178,
+        "tokensPerSec": 42.5,
+        "geminiApiCalls": 0
+      }
+    },
+    {
+      "id": "procedure-versus-care",
+      "raw": {
+        "correct": 3,
+        "valueCorrect": 5,
+        "valueAccuracy": 0.8333333333333334,
+        "total": 6,
+        "exactFieldAccuracy": 0.5,
+        "missingPredictions": 1,
+        "truePositive": 1,
+        "falsePositive": 1,
+        "falseNegative": 3,
+        "precision": 0.5,
+        "recall": 0.25,
+        "f1": 0.3333333333333333,
+        "unsupportedAssertionRate": 0.5,
+        "omissionRate": 0.75,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 2,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "duration": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "validated": {
+        "correct": 3,
+        "valueCorrect": 5,
+        "valueAccuracy": 0.8333333333333334,
+        "total": 6,
+        "exactFieldAccuracy": 0.5,
+        "missingPredictions": 1,
+        "truePositive": 1,
+        "falsePositive": 1,
+        "falseNegative": 3,
+        "precision": 0.5,
+        "recall": 0.25,
+        "f1": 0.3333333333333333,
+        "unsupportedAssertionRate": 0.5,
+        "omissionRate": 0.75,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 2,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "duration": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "evidenceSupportedRate": 1,
+      "latencyMs": 4201,
+      "runtimeMetrics": {
+        "device": "VULKAN",
+        "vramUsedMb": 2178,
+        "systemRamUsedMb": 0,
+        "loadTimeMs": 3903,
+        "inferenceTimeMs": 4093,
+        "totalTokens": 203,
+        "tokensPerSec": 49.6,
+        "geminiApiCalls": 0
+      }
+    },
+    {
+      "id": "medication-change",
+      "raw": {
+        "correct": 2,
+        "valueCorrect": 8,
+        "valueAccuracy": 0.8888888888888888,
+        "total": 9,
+        "exactFieldAccuracy": 0.2222222222222222,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 7,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 6,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "duration": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "validated": {
+        "correct": 2,
+        "valueCorrect": 8,
+        "valueAccuracy": 0.8888888888888888,
+        "total": 9,
+        "exactFieldAccuracy": 0.2222222222222222,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 7,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 6,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "duration": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "evidenceSupportedRate": null,
+      "latencyMs": 3701,
+      "runtimeMetrics": {
+        "device": "VULKAN",
+        "vramUsedMb": 2178,
+        "systemRamUsedMb": 0,
+        "loadTimeMs": 3903,
+        "inferenceTimeMs": 3563,
+        "totalTokens": 165,
+        "tokensPerSec": 46.3,
+        "geminiApiCalls": 0
+      }
+    },
+    {
+      "id": "ambiguous-schedule",
+      "raw": {
+        "correct": 4,
+        "valueCorrect": 8,
+        "valueAccuracy": 0.8888888888888888,
+        "total": 9,
+        "exactFieldAccuracy": 0.4444444444444444,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 4,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 4,
+        "unclearExpected": 1,
+        "unclearPrecision": 0,
+        "unclearRecall": 0,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "duration": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "validated": {
+        "correct": 4,
+        "valueCorrect": 8,
+        "valueAccuracy": 0.8888888888888888,
+        "total": 9,
+        "exactFieldAccuracy": 0.4444444444444444,
+        "missingPredictions": 0,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 4,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 4,
+        "unclearExpected": 1,
+        "unclearPrecision": 0,
+        "unclearRecall": 0,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 1,
+            "accuracy": 0
+          },
+          "duration": {
+            "correct": 1,
+            "total": 1,
+            "accuracy": 1
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "evidenceSupportedRate": null,
+      "latencyMs": 2582,
+      "runtimeMetrics": {
+        "device": "VULKAN",
+        "vramUsedMb": 2178,
+        "systemRamUsedMb": 0,
+        "loadTimeMs": 3903,
+        "inferenceTimeMs": 2370,
+        "totalTokens": 91,
+        "tokensPerSec": 38.4,
+        "geminiApiCalls": 0
+      }
+    },
+    {
+      "id": "additional-notes-coverage",
+      "raw": {
+        "correct": 2,
+        "valueCorrect": 4,
+        "valueAccuracy": 0.8,
+        "total": 5,
+        "exactFieldAccuracy": 0.4,
+        "missingPredictions": 1,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 3,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 2,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "duration": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "validated": {
+        "correct": 2,
+        "valueCorrect": 4,
+        "valueAccuracy": 0.8,
+        "total": 5,
+        "exactFieldAccuracy": 0.4,
+        "missingPredictions": 1,
+        "truePositive": 0,
+        "falsePositive": 0,
+        "falseNegative": 3,
+        "precision": null,
+        "recall": 0,
+        "f1": 0,
+        "unsupportedAssertionRate": null,
+        "omissionRate": 1,
+        "incorrectCertainty": 0,
+        "unclearTruePositive": 0,
+        "unclearPredicted": 2,
+        "unclearExpected": 0,
+        "unclearPrecision": 0,
+        "unclearRecall": null,
+        "fieldGroups": {
+          "name": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "dosage": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "frequency": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "duration": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "allergies": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          },
+          "followUpAppointments": {
+            "correct": 0,
+            "total": 0,
+            "accuracy": null
+          }
+        },
+        "allergyState": {
+          "expected": "missing",
+          "predicted": "missing",
+          "correct": true
+        }
+      },
+      "evidenceSupportedRate": null,
+      "latencyMs": 3060,
+      "runtimeMetrics": {
+        "device": "VULKAN",
+        "vramUsedMb": 2178,
+        "systemRamUsedMb": 0,
+        "loadTimeMs": 3903,
+        "inferenceTimeMs": 2913,
+        "totalTokens": 126,
+        "tokensPerSec": 43.3,
+        "geminiApiCalls": 0
+      }
+    }
+  ]
+}

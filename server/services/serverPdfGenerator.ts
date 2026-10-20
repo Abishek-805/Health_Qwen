@@ -25,6 +25,7 @@
  */
 
 import { jsPDF } from 'jspdf';
+import { AUDIT_POLICY_VERSION } from '../audit/deterministicAudit';
 import {
   DischargeDocument,
   MedicationItem,
@@ -52,7 +53,7 @@ const MARGIN = 14;
 const CONTENT_W = PAGE_WIDTH - MARGIN * 2;
 const FOOTER_H = 14;
 const BOTTOM_LIMIT = PAGE_HEIGHT - FOOTER_H - 6;
-const TOP_START = 14;
+const TOP_START = 18;
 
 // ─────────────────────────────────────────────────────────────────
 // Helpers
@@ -103,10 +104,11 @@ class PageEngine {
     this.pdf.setFontSize(fontSize);
     this.pdf.setTextColor(r, g, b);
     const lines = this.pdf.splitTextToSize(text || '', maxWidth);
-    const needed = lines.length * lineSpacing;
-    this.ensure(needed + 2);
-    this.pdf.text(lines, x, this.y);
-    this.y += needed;
+    for (const line of lines) {
+      this.ensure(lineSpacing + 2);
+      this.pdf.text(line, x, this.y);
+      this.y += lineSpacing;
+    }
   }
 
   rule(r = 200, g = 200, b = 200): void {
@@ -158,10 +160,8 @@ function drawKeyValue(engine: PageEngine, key: string, value: string): void {
   pdf.setFontSize(9.5);
   pdf.setTextColor(30, 40, 60);
   pdf.setFont('helvetica', 'normal');
-  const lines = pdf.splitTextToSize(safe(value), CONTENT_W - 4);
-  engine.ensure(lines.length * 5 + 2);
-  pdf.text(lines, MARGIN + 2, engine.y);
-  engine.advance(lines.length * 5 + 3);
+  engine.drawText(safe(value), MARGIN + 2, CONTENT_W - 4, 9.5, 30, 40, 60, 5);
+  engine.advance(3);
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -236,11 +236,15 @@ export function generateApprovedDischargePdf(doc: DischargeDocument): ServerPdfR
   if (doc.auditResult?.overallStatus === 'CRITICAL_ISSUE') {
     throw new Error('CRITICAL_AUDIT_BLOCK: Cannot generate official PDF with unresolved critical safety issues.');
   }
+  if (doc.approvalStatus !== 'APPROVED' || !doc.auditResult || doc.auditResult.policyVersion !== AUDIT_POLICY_VERSION || doc.auditResult.cloudAuditStatus === 'unavailable' ||
+      doc.auditResult.reportVersion !== doc.generatedReport.version || doc.currentVersion !== doc.generatedReport.version) {
+    throw new Error('Cannot generate official PDF: a current saved approved report and audit are required.');
+  }
 
   const verified = doc.verifiedData;
   const report = doc.generatedReport;
   const hospital = doc.hospitalInfo?.name || 'Local healthcare workspace';
-  const dept = doc.hospitalInfo?.department || 'Department of Clinical Operations';
+  const dept = doc.hospitalInfo?.department || 'Department not specified';
   const approvedBy = doc.approvedBy;
 
   const patientName = safe(verified.patient?.name?.value, 'Not specified');
@@ -260,7 +264,7 @@ export function generateApprovedDischargePdf(doc: DischargeDocument): ServerPdfR
   pdf.setFont('helvetica', 'normal');
 
   const engine = new PageEngine(pdf);
-  engine.y = 16;
+  engine.y = TOP_START;
 
   // ══════════════════════════════════════════════════════
   // DOCUMENT TITLE
@@ -306,7 +310,7 @@ export function generateApprovedDischargePdf(doc: DischargeDocument): ServerPdfR
   drawInfoCell('PATIENT NAME', patientName, 0);
   drawInfoCell('PATIENT ID', patientId, col);
   drawInfoCell('AGE / GENDER', `${age} / ${gender}`, col * 2);
-  drawInfoCell('DISCHARGE DATE',
+  drawInfoCell('PDF CREATED',
     new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
     col * 3
   );
@@ -350,6 +354,9 @@ export function generateApprovedDischargePdf(doc: DischargeDocument): ServerPdfR
   const hasAllergies = allergies.length > 0;
 
   const allergyBoxH = hasAllergies ? Math.max(16, allergies.length * 6 + 10) : 14;
+  if (allergyBoxH > BOTTOM_LIMIT - TOP_START || allergies.some(allergy => pdf.splitTextToSize(allergy.value, CONTENT_W - 12).length > 1)) {
+    drawBodyText(engine, allergies.map(allergy => allergy.value).join('\n'));
+  } else {
   engine.ensure(allergyBoxH + 2);
   pdf.setFillColor(255, 244, 230);
   pdf.setDrawColor(200, 100, 30);
@@ -375,9 +382,10 @@ export function generateApprovedDischargePdf(doc: DischargeDocument): ServerPdfR
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(9);
     pdf.setTextColor(80, 80, 80);
-    pdf.text('No Known Drug Allergies (NKDA)', MARGIN + 6, engine.y + 12);
+    pdf.text('Allergy information not provided', MARGIN + 6, engine.y + 12);
   }
   engine.advance(allergyBoxH + 4);
+  }
 
   // ══════════════════════════════════════════════════════
   // MEDICATION SCHEDULE
@@ -419,6 +427,10 @@ export function generateApprovedDischargePdf(doc: DischargeDocument): ServerPdfR
         maxLines = Math.max(maxLines, lines.length);
       });
       const thisRowH = Math.max(rowH, maxLines * 4.5 + 3);
+      if (thisRowH > BOTTOM_LIMIT - TOP_START) {
+        cells.forEach((cell, index) => drawKeyValue(engine, colLabels[index], cell));
+        return;
+      }
       engine.ensure(thisRowH);
 
       if (idx % 2 === 0) {
@@ -440,9 +452,8 @@ export function generateApprovedDischargePdf(doc: DischargeDocument): ServerPdfR
       pdf.line(MARGIN, engine.y + thisRowH, MARGIN + CONTENT_W, engine.y + thisRowH);
       engine.advance(thisRowH);
     });
-  } else {
-    drawBodyText(engine, report.sections.medicationInstructions);
   }
+  drawBodyText(engine, report.sections.medicationInstructions);
   engine.advance(4);
 
   // ══════════════════════════════════════════════════════
@@ -471,6 +482,10 @@ export function generateApprovedDischargePdf(doc: DischargeDocument): ServerPdfR
   if (warnText) {
     const warnLines = pdf.splitTextToSize(warnText, CONTENT_W - 6);
     const warnH = Math.max(14, warnLines.length * 5 + 6);
+    if (warnH > BOTTOM_LIMIT - TOP_START) {
+      engine.drawText(warnText, MARGIN + 3, CONTENT_W - 6, 9, 100, 20, 20, 5);
+      engine.advance(4);
+    } else {
     engine.ensure(warnH);
     pdf.setFillColor(255, 240, 240);
     pdf.setDrawColor(180, 60, 60);
@@ -480,6 +495,7 @@ export function generateApprovedDischargePdf(doc: DischargeDocument): ServerPdfR
     pdf.setTextColor(100, 20, 20);
     pdf.text(warnLines, MARGIN + 3, engine.y + 5);
     engine.advance(warnH + 4);
+    }
   }
 
   // ══════════════════════════════════════════════════════
@@ -491,6 +507,14 @@ export function generateApprovedDischargePdf(doc: DischargeDocument): ServerPdfR
   const followUps: FollowUpItem[] = verified.followUp || [];
   if (followUps.length > 0) {
     followUps.forEach((appt: FollowUpItem, idx: number) => {
+      if ([appt.provider, appt.date, appt.time, appt.location].some(value => pdf.splitTextToSize(safe(value), CONTENT_W / 4 - 8).length > 1)) {
+        drawKeyValue(engine, 'Provider', appt.provider);
+        drawKeyValue(engine, 'Date', appt.date);
+        drawKeyValue(engine, 'Time', appt.time);
+        drawKeyValue(engine, 'Location', appt.location);
+        if (appt.instructions) drawKeyValue(engine, 'Instructions', appt.instructions);
+        return;
+      }
       engine.ensure(32);
       const apptH = 28;
       pdf.setFillColor(idx % 2 === 0 ? 246 : 242, 248, 252);
@@ -525,9 +549,13 @@ export function generateApprovedDischargePdf(doc: DischargeDocument): ServerPdfR
         drawKeyValue(engine, 'Instructions', appt.instructions);
       }
     });
-  } else {
-    drawBodyText(engine, report.sections.followUpAppointments);
   }
+  drawBodyText(engine, report.sections.followUpAppointments);
+  engine.advance(3);
+
+  drawSectionTitle(engine, 'Additional Instructions');
+  engine.advance(3);
+  drawBodyText(engine, report.sections.additionalInstructions);
   engine.advance(3);
 
   // ══════════════════════════════════════════════════════
@@ -554,7 +582,8 @@ export function generateApprovedDischargePdf(doc: DischargeDocument): ServerPdfR
   pdf.text(`APPROVED BY CLINICIAN: ${approvedBy.name}`, MARGIN + 4, attY + 14);
   pdf.text(`Role: ${approvedBy.role}`, MARGIN + 4, attY + 19.5);
   pdf.text(`Approved: ${new Date(approvedBy.timestamp).toLocaleString()}`, MARGIN + 4, attY + 25);
-  if (approvedBy.signatureNote) {
+  const noteNeedsFlow = approvedBy.signatureNote && pdf.splitTextToSize(approvedBy.signatureNote, CONTENT_W - 8).length > 2;
+  if (approvedBy.signatureNote && !noteNeedsFlow) {
     const noteLines = pdf.splitTextToSize(approvedBy.signatureNote, CONTENT_W - 8);
     pdf.text(noteLines, MARGIN + 4, attY + 30.5);
   }
@@ -563,6 +592,7 @@ export function generateApprovedDischargePdf(doc: DischargeDocument): ServerPdfR
   pdf.setTextColor(20, 80, 35);
   pdf.text(`Report Version: v${version}`, MARGIN + CONTENT_W - 30, attY + 7);
   engine.advance(attH + 4);
+  if (noteNeedsFlow) drawKeyValue(engine, 'Review note', approvedBy.signatureNote!);
 
   // ══════════════════════════════════════════════════════
   // PASS 2 — Headers & Footers on all pages
