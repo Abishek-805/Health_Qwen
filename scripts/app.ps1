@@ -1,4 +1,4 @@
-param([Parameter(Mandatory = $true)][ValidateSet('start', 'stop')][string]$Action)
+param([Parameter(Mandatory = $true)][ValidateSet('start', 'stop')][string]$Action, [switch]$OpenBrowser)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $root
@@ -29,7 +29,11 @@ try {
         } else { Write-Host 'No managed server is running.' }
         exit 0
     }
-    if ($managed) { Write-Host 'This project is already running. Use stop.bat before restarting.'; exit 0 }
+    if ($managed) {
+        Write-Host 'This project is already running. Use stop.bat before restarting.'
+        if ($OpenBrowser -and $state.url) { Start-Process -FilePath $state.url }
+        exit 0
+    }
     $node = (Get-Command node.exe -ErrorAction Stop).Source
     $cli = Join-Path $root 'node_modules\tsx\dist\cli.mjs'
     if (!(Test-Path -LiteralPath $cli)) { throw 'Dependencies missing. Run npm ci in the project folder first.' }
@@ -42,7 +46,8 @@ try {
     try { $portProbe.Start() } finally { $portProbe.Stop() }
     # Keep a stable parent process for precise start/stop ownership.
     $child = Start-Process -FilePath $node -ArgumentList @(('"' + $cli + '"'), ('"' + (Join-Path $root 'server.ts') + '"')) -WorkingDirectory $root -WindowStyle Hidden -RedirectStandardOutput (Join-Path $runtime 'stdout.log') -RedirectStandardError (Join-Path $runtime 'stderr.log') -PassThru
-    @{ id = $child.Id; started = $child.StartTime.ToUniversalTime().Ticks.ToString() } | ConvertTo-Json | Set-Content -LiteralPath $statePath
+    $url = "http://127.0.0.1:$appPort"
+    @{ id = $child.Id; started = $child.StartTime.ToUniversalTime().Ticks.ToString(); url = $url } | ConvertTo-Json | Set-Content -LiteralPath $statePath
     $ready = $false
     for ($attempt = 0; $attempt -lt 30; $attempt++) {
         $child.Refresh()
@@ -60,6 +65,7 @@ try {
     Write-Host "Server ready. Open http://127.0.0.1:$appPort"
     Write-Host 'Browser login: .runtime\login.txt (or configured APP_USERNAME / APP_PASSWORD).'
     Write-Host 'Startup output: .runtime\stdout.log; errors: .runtime\stderr.log. Use stop.bat to stop.'
+    if ($OpenBrowser) { Start-Process -FilePath $url }
 } catch {
     Write-Host ('Error: ' + $_.Exception.Message) -ForegroundColor Red
     exit 1

@@ -22,7 +22,7 @@ Open [localhost:3000](http://localhost:3000). The browser asks for a username an
 
 `NODE_LLAMA_CPP_POSTINSTALL=skip` skips the install-time native probe. Native backend selection and the pinned model are exercised by `npm run test:model`; compatible prebuilt bindings or native build tools are still required for inference. Do not treat successful package installation as proof of hardware readiness.
 
-- `start.bat` runs the combined frontend/API in the background, without backend watch reloads. It creates `.env` only when absent and reports log locations.
+- `start.bat` starts both the frontend and backend in one background server, waits until it is ready, and opens the app in your default browser. Running it again reopens the existing app without starting another server. It creates `.env` only when absent and reports log locations. Backend watch reloads are disabled.
 - `stop.bat` stops only this checkout's recorded process tree. **Saved documents, settings, and approval history survive restarts.** Unsaved browser edits do not.
 - Runtime logs/process state are in `.runtime/`; clinical data is in `data/discharge.sqlite`. Both directories are ignored by Git and Vite watching.
 - The launcher checks port availability and waits for HTTP readiness, using the configured port. `/api/health` checks HTTP readiness; `/api/extraction-status` distinguishes missing, unloaded, and ready models.
