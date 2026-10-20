@@ -82,7 +82,8 @@ Backup uses a consistent SQLite snapshot. Restore checks integrity and schema pr
 ```powershell
 npm run lint              # TypeScript validation
 npm test                  # Authentication, trust boundaries, persistence/recovery, dose/evidence, PDF HTTP/content, architecture
-npm run test:model        # Eight model/OCR/extraction/audit/budget tests; requires downloaded weights and native runtime
+npm run test:model        # Nine model/OCR/extraction/audit/budget tests; requires downloaded weights and native runtime
+npm run test:pdf-upload   # Build first; actual two-page digital/scanned multipart uploads, local model, isolated port 3308
 npm run test:integration  # Eighteen service-level acceptance criteria; requires model/OCR
 npm run test:windows      # Windows batch lifecycle checks, uses port 3301
 npm run test:clinical     # Synthetic clinical regressions and scorer checks

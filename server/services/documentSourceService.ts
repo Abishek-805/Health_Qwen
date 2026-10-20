@@ -245,18 +245,20 @@ async function processPdfBuffer(fileBuffer: Buffer): Promise<DocumentSourceResul
   console.log('[PDF DEBUG] Digital text insufficient (< 30 chars). Attempting scanned PDF page OCR...');
   let ocrCombinedText = '';
   let selectedMethod: 'tesseract-ocr' | 'paddle-ocr' = 'tesseract-ocr';
+  let ocrWorker: Awaited<ReturnType<typeof createWorker>> | undefined;
 
   try {
     if (pdfInstance && typeof pdfInstance.getScreenshot === 'function') {
       const screenshots = await pdfInstance.getScreenshot({ first: 20, desiredWidth: 1600 });
       const pages = screenshots?.pages || [];
       pageCount = pages.length || pageCount;
+      if (pages.length) ocrWorker = await createWorker('eng');
 
       for (let i = 0; i < pages.length; i++) {
         const page = pages[i];
         if (page?.data) {
           const pageBuffer = Buffer.from(page.data);
-          const ocrRes = await runMultiEngineOcr(pageBuffer, pageCount || 1);
+          const ocrRes = await runMultiEngineOcr(pageBuffer, pageCount || 1, ocrWorker);
           selectedMethod = ocrRes.method;
           if (ocrRes.text) {
             ocrCombinedText += (ocrCombinedText ? '\n\n' : '') + ocrRes.text;
@@ -266,9 +268,13 @@ async function processPdfBuffer(fileBuffer: Buffer): Promise<DocumentSourceResul
     }
   } catch (err: any) {
     console.warn('[PDF DEBUG] Scanned PDF page OCR warning:', 'Processing failed');
+    // A failed page must not turn the remaining pages into a successful partial record.
+    throw new Error('Scanned PDF OCR failed. Retry with a clearer document.');
+  } finally {
+    if (ocrWorker) { try { await ocrWorker.terminate(); } catch {} }
+    await pdfInstance?.destroy?.();
   }
 
-  await pdfInstance?.destroy?.();
   const ocrNorm = normalizeText(ocrCombinedText);
   const ocrQuality = calculateOcrQuality(ocrNorm.normalizedText, pageCount || 1);
 
@@ -299,19 +305,20 @@ async function processPdfBuffer(fileBuffer: Buffer): Promise<DocumentSourceResul
   };
 }
 
-/** Runs supported English OCR locally; always releases the worker. */
+/** A scanned PDF shares one worker across its pages; its caller releases that worker. */
 async function runMultiEngineOcr(
   imageBuffer: Buffer,
-  pageCount: number = 1
+  pageCount: number = 1,
+  sharedWorker?: Awaited<ReturnType<typeof createWorker>>
 ): Promise<{ text: string; method: 'tesseract-ocr' | 'paddle-ocr'; quality: OcrQualityMetrics }> {
   // Strategy 1: Tesseract.js (pure WASM CPU worker)
   let tesseractText = '';
   let worker: any = null;
   try {
-    worker = await createWorker('eng');
+    worker = sharedWorker || await createWorker('eng');
     let timer: ReturnType<typeof setTimeout>;
     const ret = await Promise.race([worker.recognize(imageBuffer), new Promise<never>((_, reject) => { timer = setTimeout(() => { void worker.terminate(); reject(new Error('OCR timed out.')); }, 30_000); })]).finally(() => clearTimeout(timer));
-    await worker.terminate();
+    if (!sharedWorker) await worker.terminate();
     worker = null;
     tesseractText = (ret.data.text || '').trim();
   } catch (err: any) {
@@ -321,6 +328,7 @@ async function runMultiEngineOcr(
       } catch {}
     }
     console.error('[TESSERACT OCR ERROR]:', 'Processing failed');
+    if (sharedWorker) throw new Error('OCR page recognition failed.');
   }
 
   const tesseractQuality = calculateOcrQuality(tesseractText, pageCount);

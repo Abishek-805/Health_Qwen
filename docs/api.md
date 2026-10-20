@@ -43,6 +43,8 @@ Returns `StructuredDischargeInfo`: patient fields, diagnosis/procedure/care arra
 
 The operation uses local PDF/OCR and Qwen. It does not persist an original file or a draft and has no Gemini fallback. Model/native/OCR assets may require setup/first-use downloads. Errors do not establish a successful extraction.
 
+Response extraction metadata includes `latency.sourceMs`, `modelMs`, `evidenceMs` and `totalMs`. Source timing covers PDF parsing or scanned-page OCR plus validation after multipart receipt; model timing includes initialization/context setup as well as inference. The client's upload/network time is additional. These stage measurements distinguish slow PDF reading from slow local inference. Scanned PDF pages share one per-document OCR worker, which is terminated before returning; a failed page rejects the extraction instead of returning a successful partial source.
+
 ## Verified data and report schemas
 
 `AuthoritativeDischargeData` includes `patient` (name, patientId, age, gender), `diagnosis`, `procedures`, `medications`, `allergies`, `diet`, `activityRestrictions`, `woundCare`, `followUp`, `warningSigns`, `emergencyInstructions`, `additionalNotes`, and `isConfirmedAuthoritative:true`.

@@ -51,10 +51,14 @@ apiRouter.post('/extract-discharge', (req, res, next) => {
     if (!((pdf && file.mimetype === 'application/pdf') || (png && file.mimetype === 'image/png') || (jpeg && file.mimetype === 'image/jpeg'))) throw new HttpError(415, 'Only matching PDF, PNG, and JPEG file signatures are accepted.');
   }
   const source = await extractDocumentSource({ fileBuffer: file?.buffer, mimeType: file?.mimetype, fileName: file ? (file.mimetype === 'application/pdf' ? 'upload.pdf' : 'upload.png') : undefined, textInput });
+  const sourceCompleted = Date.now();
   if (source.normalizedText.trim().length < 30 || source.ocrQuality?.qualityStatus === 'UNUSABLE') throw new HttpError(422, 'OCR_QUALITY_UNUSABLE: Upload a clearer document.');
   const extraction = await extractClinicalDataLocal(source.normalizedText);
+  const modelCompleted = Date.now();
   const checked = validateSourceEvidence(extraction.data, source.originalText);
-  res.json(mapCanonicalToStructured(checked.data, { extractedAt: new Date().toISOString(), sourceFileType: source.sourceType, sourceFileName: file?.originalname || 'Pasted text', extractionMethod: source.extractionMethod + ' + qwen2.5-1.5b-local', ocrQuality: source.ocrQuality, totalFieldsExtracted: checked.validationSummary.totalFieldsChecked, foundCount: checked.validationSummary.verifiedCount, missingCount: checked.validationSummary.missingCount, unclearCount: checked.validationSummary.unclearCount, geminiApiCalls: 0, latency: { totalMs: Date.now() - started } }));
+  const latency = { sourceMs: sourceCompleted - started, modelMs: modelCompleted - sourceCompleted, evidenceMs: Date.now() - modelCompleted, totalMs: Date.now() - started };
+  console.log(`[EXTRACTION TIMING] type=${source.sourceType} method=${source.extractionMethod} pages=${source.pageCount || 1} sourceMs=${latency.sourceMs} modelMs=${latency.modelMs} evidenceMs=${latency.evidenceMs} totalMs=${latency.totalMs}`);
+  res.json(mapCanonicalToStructured(checked.data, { extractedAt: new Date().toISOString(), sourceFileType: source.sourceType, sourceFileName: file?.originalname || 'Pasted text', extractionMethod: source.extractionMethod + ' + qwen2.5-1.5b-local', ocrQuality: source.ocrQuality, totalFieldsExtracted: checked.validationSummary.totalFieldsChecked, foundCount: checked.validationSummary.verifiedCount, missingCount: checked.validationSummary.missingCount, unclearCount: checked.validationSummary.unclearCount, geminiApiCalls: 0, latency }));
   } finally { extracting = false; }
 }));
 

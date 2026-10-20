@@ -19,6 +19,7 @@
     "test:production": "tsx server/tests/test-production-smoke.ts",
     "test:development": "tsx server/tests/test-production-smoke.ts --development",
     "test:model": "tsx server/tests/run-all-tests.ts",
+    "test:pdf-upload": "tsx server/tests/test-pdf-upload.ts",
     "test:integration": "tsx server/tests/test-ui-integration-flow.ts",
     "backup": "tsx server/scripts/maintenance.ts backup",
     "restore": "tsx server/scripts/maintenance.ts restore",
