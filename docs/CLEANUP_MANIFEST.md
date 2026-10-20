@@ -1,3 +1,5 @@
+> Historical record from the original rebuild. The current implementation and guarantees are described in AUDIT_REPORT.md.
+
 # CLEANUP MANIFEST & DEPENDENCY AUDIT
 
 This manifest documents the dependency and file audit conducted during the clean local clinical extraction rebuild.

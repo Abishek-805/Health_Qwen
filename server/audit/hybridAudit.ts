@@ -46,6 +46,12 @@ export async function executeHybridAudit(
       return acc;
     }, {} as Record<AuditCategory, { status: AuditCategoryStatus; issueCount: number }>);
 
+  const cloudAuditStatus = process.env.GEMINI_AUDIT_ENABLED !== 'true' ? 'disabled' : semanticFindings.some(f => f.id === 'cloud-audit-unavailable') ? 'unavailable' : 'completed';
+  const localCategories = ['PATIENT_INFORMATION', 'DIAGNOSIS', 'PROCEDURES', 'MEDICATIONS', 'ALLERGIES', 'FOLLOW_UP', 'OMISSIONS', 'NUMERIC_VALUES', 'DATES', 'DIET', 'ACTIVITY_RESTRICTIONS', 'MEDICAL_MEANING'];
+  for (const category of ALL_18_AUDIT_CATEGORIES) {
+    if (!localCategories.includes(category)) categorySummaries[category].status = 'NOT_EVALUATED';
+  }
+  const coverageNote = 'Local checks cover specific patterns, not complete clinical meaning. NOT_EVALUATED categories require explicit clinician review. A passing rule is not a clinical safety guarantee.';
   // Group findings into categories
   allFindings.forEach((finding) => {
     const current = categorySummaries[finding.category];
@@ -69,7 +75,7 @@ export async function executeHybridAudit(
   const hasCritical = allFindings.some(
     (f) => f.status === 'CRITICAL_ISSUE' || f.severity === 'CRITICAL'
   );
-  const hasReviewRequired = allFindings.some(
+  const hasReviewRequired = Object.values(categorySummaries).some(category => category.status === 'NOT_EVALUATED') || allFindings.some(
     (f) => f.status === 'REVIEW_REQUIRED' || f.severity === 'HIGH' || f.severity === 'MEDIUM'
   );
 
@@ -91,8 +97,8 @@ export async function executeHybridAudit(
         allFindings.filter((f) => f.status === 'CRITICAL_ISSUE').length
       } critical mismatch(es). Approval is strictly blocked until issues are corrected.`
     : hasReviewRequired
-    ? `REVIEW REQUIRED: Found ${allFindings.length} issue(s) needing clinician evaluation prior to sign-off.`
-    : `AUDIT PASSED: Report is fully aligned with verified authoritative patient data across all 18 clinical safety categories.`;
+    ? `Clinician review required: ${allFindings.length} finding(s); categories not evaluated by automation must be reviewed manually.`
+    : `No issues detected by the checks performed. Clinician review is still required.`;
 
   const categoryStatus = ALL_18_AUDIT_CATEGORIES.reduce((acc, cat) => {
     acc[cat] = categorySummaries[cat]?.status || 'PASS';
@@ -101,9 +107,11 @@ export async function executeHybridAudit(
 
   const criticalCount = allFindings.filter((f) => f.status === 'CRITICAL_ISSUE').length;
   const warningCount = allFindings.filter((f) => f.status === 'REVIEW_REQUIRED').length;
-  const passCount = ALL_18_AUDIT_CATEGORIES.length - (criticalCount > 0 ? 1 : 0) - (warningCount > 0 ? 1 : 0);
+  const passCount = Object.values(categorySummaries).filter(category => category.status === 'PASS').length;
 
   return {
+    cloudAuditStatus,
+    coverageNote,
     auditId,
     reportVersion: report.version,
     auditedAt: new Date().toISOString(),

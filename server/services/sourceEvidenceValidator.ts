@@ -41,29 +41,11 @@ export function validateSourceEvidence(
       };
     }
 
-    if (!normSource) {
-      // If no source text is available for verification, preserve state
-      if (field.status === 'FOUND') verifiedCount++;
-      if (field.status === 'UNCLEAR') unclearCount++;
-      return field;
-    }
-
-    const evidenceText = field.evidence || field.value;
-    const normEvidence = normalizeForMatching(evidenceText);
+    const normEvidence = normalizeForMatching(field.evidence || field.value);
     const normValue = normalizeForMatching(field.value);
-
-    // Conservative matching: check if evidence or value is present in normalized source text
-    const isEvidenceMatch = normEvidence && normSource.includes(normEvidence);
-    const isValueMatch = normValue && normSource.includes(normValue);
-
-    // Partial token match check for multi-word evidence (e.g. key tokens present)
-    const tokens = normEvidence.split(' ').filter((t) => t.length > 2);
-    const tokenMatchRatio =
-      tokens.length > 0
-        ? tokens.filter((t) => normSource.includes(t)).length / tokens.length
-        : 0;
-
-    const isSupported = isEvidenceMatch || isValueMatch || tokenMatchRatio >= 0.75;
+    const contains = (source: string, value: string) => !!value && (' ' + source + ' ').includes(' ' + value + ' ');
+    // Both the value and its quoted evidence must agree; token overlap cannot prove a clinical fact.
+    const isSupported = contains(normSource, normEvidence) && contains(normEvidence, normValue);
 
     if (isSupported) {
       verifiedCount++;
@@ -148,7 +130,8 @@ function normalizeForMatching(text: string): string {
   if (!text) return '';
   return text
     .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/(?<!\d)\.|\.(?!\d)/g, ' ')
+    .replace(/[^a-z0-9.\-/%\s]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }

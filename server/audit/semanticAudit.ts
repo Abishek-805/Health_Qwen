@@ -81,16 +81,12 @@ export async function runSemanticAudit(
     }
   }
 
-  // AI Semantic Layer Execution with 2.5s timeout for fast execution
   let aiFindings: AuditFinding[] = [];
-  try {
-    const aiPromise = runSemanticAuditAi(verified, report);
-    const timeoutPromise = new Promise<AuditFinding[]>((resolve) =>
-      setTimeout(() => resolve([]), 2500)
-    );
-    aiFindings = await Promise.race([aiPromise, timeoutPromise]);
-  } catch (err) {
-    console.warn('Semantic AI audit failed or offline, relying on rule-based semantic safety checks.');
+  if (process.env.GEMINI_AUDIT_ENABLED === 'true') {
+    try { aiFindings = await runSemanticAuditAi(verified, report); }
+    catch {
+      aiFindings = [{ id: 'cloud-audit-unavailable', category: 'MEDICAL_MEANING', categoryName: 'Medical meaning', severity: 'HIGH', status: 'REVIEW_REQUIRED', title: 'Requested cloud audit unavailable', verifiedSourceText: '', generatedReportText: '', whyItMatters: 'Retry the requested audit before approval; an unavailable check is not a pass.', isDeterministic: false }];
+    }
   }
 
   // Merge findings, avoiding duplicate titles

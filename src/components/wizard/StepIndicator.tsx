@@ -18,7 +18,7 @@ export const StepIndicator: React.FC<Props> = ({ currentStep, setStep, maxReache
   const steps = [
     { number: 1, name: 'Upload & Extract', icon: Upload, desc: 'PDF / Image / Text' },
     { number: 2, name: 'Verify & Complete', icon: UserCheck2, desc: 'Authoritative Data' },
-    { number: 3, name: 'AI Generation', icon: FileText, desc: 'Multilingual Draft' },
+    { number: 3, name: 'AI Generation', icon: FileText, desc: 'English draft' },
     { number: 4, name: '18-Category Audit', icon: ShieldAlert, desc: 'Hybrid Safety' },
     { number: 5, name: 'Review & Edit', icon: Edit3, desc: 'Clinical Adjustments' },
     { number: 6, name: 'Approval & PDF', icon: CheckCircle2, desc: 'Sign-off & Export' },
@@ -35,7 +35,7 @@ export const StepIndicator: React.FC<Props> = ({ currentStep, setStep, maxReache
 
           return (
             <React.Fragment key={step.number}>
-              <button
+              <button aria-label={step.number + ". " + step.name} aria-current={isActive ? "step" : undefined}
                 disabled={!isAccessible}
                 onClick={() => isAccessible && setStep(step.number)}
                 className={`flex items-center gap-2.5 rounded-2xl px-3.5 py-2 transition-all ${
@@ -45,7 +45,7 @@ export const StepIndicator: React.FC<Props> = ({ currentStep, setStep, maxReache
                     ? 'bg-[#EBE7E0] text-[#3E4234] border border-[#D9D1C5] hover:bg-[#D9D1C5] cursor-pointer'
                     : isAccessible
                     ? 'bg-[#F5F5F0] text-[#3E4234] hover:bg-[#EBE7E0] cursor-pointer'
-                    : 'bg-[#F5F5F0]/50 text-[#8C8476] opacity-50 cursor-not-allowed'
+                    : 'bg-[#F5F5F0]/50 text-[#665F54] opacity-50 cursor-not-allowed'
                 }`}
               >
                 <div
@@ -64,7 +64,7 @@ export const StepIndicator: React.FC<Props> = ({ currentStep, setStep, maxReache
                   <div className="text-xs font-bold leading-tight">{step.name}</div>
                   <div
                     className={`text-[10px] ${
-                      isActive ? 'text-white/80' : isCompleted ? 'text-[#5A5A40]' : 'text-[#8C8476]'
+                      isActive ? 'text-white/80' : isCompleted ? 'text-[#5A5A40]' : 'text-[#665F54]'
                     }`}
                   >
                     {step.desc}

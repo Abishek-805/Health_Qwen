@@ -135,7 +135,7 @@ export type AuditCategory = AuditLayer1Category | AuditLayer2Category;
 
 export type AuditSeverity = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
 
-export type AuditCategoryStatus = 'PASS' | 'REVIEW_REQUIRED' | 'CRITICAL_ISSUE' | 'NOT_APPLICABLE';
+export type AuditCategoryStatus = 'PASS' | 'REVIEW_REQUIRED' | 'CRITICAL_ISSUE' | 'NOT_APPLICABLE' | 'NOT_EVALUATED';
 
 export type AuditRecommendation = 'READY_FOR_HUMAN_APPROVAL' | 'DO_NOT_APPROVE' | 'REVIEW_REQUIRED';
 
@@ -155,6 +155,8 @@ export interface AuditFinding {
 }
 
 export interface AuditResult {
+  cloudAuditStatus?: 'disabled' | 'completed' | 'unavailable';
+  coverageNote?: string;
   auditId: string;
   reportVersion: number;
   auditedAt: string;

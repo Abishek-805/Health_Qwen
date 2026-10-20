@@ -1,10 +1,11 @@
+import { MODEL_SHA256, sha256File } from '../scripts/download-model';
 import path from 'path';
 import fs from 'fs';
 import { getLlama, LlamaModel, LlamaChatSession } from 'node-llama-cpp';
 import { CanonicalDischargeExtraction, ExtractedField } from './clinicalExtractionService.js';
 
 export interface LocalExtractionBenchmarkMetrics {
-  device: 'CUDA' | 'CPU';
+  device: string;
   vramUsedMb: number;
   systemRamUsedMb: number;
   loadTimeMs: number;
@@ -27,6 +28,8 @@ export interface QwenStatus {
   geminiApiCalls: 0;
   modelPath: string;
   modelLoaded: boolean;
+  online: boolean;
+  message: string;
   loadTimeMs: number;
 }
 
@@ -40,9 +43,16 @@ const MODEL_PATH = path.join(
 let cachedLlama: any = null;
 let cachedModel: LlamaModel | null = null;
 let isCudaAvailable = false;
+let backend = 'CPU';
+let initialization: Promise<{ llama: any; model: LlamaModel }> | undefined;
+let inferenceActive = false;
 let modelLoadTimeMs = 0;
 
-export async function getOrInitQwenModel(): Promise<{ llama: any; model: LlamaModel }> {
+export function getOrInitQwenModel(): Promise<{ llama: any; model: LlamaModel }> {
+  if (!initialization) initialization = initializeModel().catch(error => { initialization = undefined; throw error; });
+  return initialization;
+}
+async function initializeModel(): Promise<{ llama: any; model: LlamaModel }> {
   if (cachedModel) {
     return { llama: cachedLlama, model: cachedModel };
   }
@@ -53,15 +63,17 @@ export async function getOrInitQwenModel(): Promise<{ llama: any; model: LlamaMo
     );
   }
 
+  if (await sha256File(MODEL_PATH) !== MODEL_SHA256) throw new Error('Local model checksum mismatch. Run npm run download-model.');
   const startLoad = Date.now();
   console.log(`[QwenEngine] Initializing node-llama-cpp with model ${MODEL_PATH}...`);
 
   try {
     cachedLlama = await getLlama();
     const gpuDevice = cachedLlama.gpu;
-    isCudaAvailable = !!gpuDevice && gpuDevice !== 'cpu' && gpuDevice !== false;
+    isCudaAvailable = !!gpuDevice && gpuDevice !== 'cpu';
+    backend = isCudaAvailable ? String(gpuDevice).toUpperCase() : 'CPU';
 
-    console.log(`[QwenEngine] Compute device: ${isCudaAvailable ? 'CUDA GPU' : 'CPU'} (gpu=${gpuDevice})`);
+    console.log(`[QwenEngine] Compute device: ${backend} (gpu=${gpuDevice})`);
 
     cachedModel = await cachedLlama.loadModel({
       modelPath: MODEL_PATH,
@@ -79,6 +91,7 @@ export async function getOrInitQwenModel(): Promise<{ llama: any; model: LlamaMo
       gpuLayers: 0,
     });
     isCudaAvailable = false;
+    backend = 'CPU';
     modelLoadTimeMs = Date.now() - startLoad;
     console.log(`[QwenEngine] CPU model loaded in ${modelLoadTimeMs} ms.`);
     return { llama: cachedLlama, model: cachedModel! };
@@ -89,8 +102,10 @@ export function getQwenStatus(): QwenStatus {
   return {
     engine: 'qwen2.5-1.5b-local',
     model: 'Qwen2.5-1.5B-Instruct-Q4_K_M',
-    status: 'READY',
-    device: cachedModel !== null ? (isCudaAvailable ? 'CUDA GPU (gpu=vulkan)' : 'CPU') : 'CUDA GPU (gpu=vulkan)',
+    status: !fs.existsSync(MODEL_PATH) ? 'MISSING_MODEL' : cachedModel ? 'READY' : 'NOT_LOADED',
+    online: fs.existsSync(MODEL_PATH),
+    message: cachedModel ? 'Local model loaded' : 'Local model not loaded',
+    device: cachedModel ? backend : 'Not initialized',
     geminiApiCalls: 0,
     modelPath: MODEL_PATH,
     modelLoaded: cachedModel !== null,
@@ -162,8 +177,8 @@ MEDICATIONS:
 5. Only create a medication entry when a valid medication name is present.
 6. Extract name, dosage, frequency, duration, and instructions independently per medication.
 7. Missing frequency or duration must have value "" and status "MISSING". Do NOT infer "once daily" or any frequency.
-8. Maximum-dose clauses (e.g. "Maximum 3000 mg in 24 hours") belong in the instructions field of the associated medication.
-9. Standalone statements like "Do not take more than 3000 mg in 24 hours." with no medication anchor must result in medications: [].
+8. Copy a maximum-dose clause only when it appears in the supplied document, into the associated medication instructions. Never copy examples from these rules into extracted data.
+9. A dose restriction without an explicitly associated medication must not create a medication entry.
 
 PROCEDURES:
 10. Extract ACTUAL clinical procedures performed during hospitalization (e.g., "Laparoscopic Cholecystectomy", "Percutaneous Coronary Intervention").
@@ -177,11 +192,18 @@ MISSING / UNCLEAR:
 export async function extractClinicalDataLocal(
   normalizedText: string
 ): Promise<LocalClinicalExtractionResult> {
+  if (inferenceActive) throw new Error('Local extraction is busy. Retry later.');
+  if (normalizedText.length > 12_000) throw new Error('Clinical extraction supports at most 12,000 characters. Split this document.');
+  inferenceActive = true;
+  try { return await runExtraction(normalizedText); } finally { inferenceActive = false; }
+}
+async function runExtraction(normalizedText: string): Promise<LocalClinicalExtractionResult> {
   const { model } = await getOrInitQwenModel();
 
-  const context = await model.createContext({
-    contextSize: 4096,
-  });
+  const userPrompt = 'DISCHARGE DOCUMENT CONTENT:\n' + normalizedText + '\n\nReturn ONLY the JSON extraction object, no other text:';
+  // shortcut: reserve 256 framing tokens for the pinned Qwen template, recalculate when changing the model.
+  if (model.tokenize(LOCAL_EXTRACTION_SYSTEM_PROMPT + userPrompt).length + 2048 + 256 > 8192) throw new RangeError('Document exceeds the model token budget. Split the source document.');
+  const context = await model.createContext({ contextSize: 8192 });
 
   const startInference = Date.now();
   const memoryBefore = process.memoryUsage();
@@ -195,11 +217,11 @@ export async function extractClinicalDataLocal(
       autoDisposeSequence: true,
     });
 
-    const userPrompt = `DISCHARGE DOCUMENT CONTENT:\n${normalizedText}\n\nReturn ONLY the JSON extraction object, no other text:`;
 
     responseText = await session.prompt(userPrompt, {
       temperature: 0.05,
       maxTokens: 2048,
+      signal: AbortSignal.timeout(120_000),
     });
   } finally {
     await context.dispose();
@@ -208,10 +230,8 @@ export async function extractClinicalDataLocal(
   const inferenceTimeMs = Math.max(1, Date.now() - startInference);
   const memoryAfter = process.memoryUsage();
 
-  console.log(`[LOCAL EXTRACTION] engine=qwen2.5-1.5b-local device=${isCudaAvailable ? 'CUDA' : 'CPU'} inferenceMs=${inferenceTimeMs} geminiApiCalls=0`);
-  if (responseText) {
-    console.log(`[QwenEngine] Raw response (first 300 chars): ${responseText.substring(0, 300)}`);
-  }
+  console.log(`[LOCAL EXTRACTION] engine=qwen2.5-1.5b-local device=${backend} inferenceMs=${inferenceTimeMs} geminiApiCalls=0`);
+
 
   const cleanedJson = cleanJsonText(responseText);
   let parsed: any = {};
@@ -222,6 +242,7 @@ export async function extractClinicalDataLocal(
     parsed = repairAndParseJson(cleanedJson);
   }
 
+  if (!parsed || !parsed.patient || typeof parsed.patient !== 'object') throw new Error('Model returned invalid extraction data. Retry with a clearer document.');
   const normalizedCanonical = normalizeCanonicalData(parsed);
 
   const approxTokens = Math.max(1, Math.ceil(responseText.length / 3));
@@ -231,9 +252,9 @@ export async function extractClinicalDataLocal(
   );
 
   const metrics: LocalExtractionBenchmarkMetrics = {
-    device: isCudaAvailable ? 'CUDA' : 'CPU',
-    vramUsedMb: isCudaAvailable ? 1200 : 0,
-    systemRamUsedMb: Math.max(10, systemRamUsedMb),
+    device: backend,
+    vramUsedMb: Math.round((await cachedLlama.getVramState()).used / (1024 * 1024)),
+    systemRamUsedMb: Math.max(0, systemRamUsedMb),
     loadTimeMs: modelLoadTimeMs,
     inferenceTimeMs,
     totalTokens: approxTokens,

@@ -26,7 +26,7 @@ export const ReviewQueuePage: React.FC<Props> = ({ documents, onSelectDocumentFo
               <h3 className="font-serif italic text-xl text-[#3E4234]">
                 Clinical Review & Sign-Off Queue ({pendingDocs.length})
               </h3>
-              <p className="text-xs text-[#8C8476] mt-0.5">
+              <p className="text-xs text-[#665F54] mt-0.5">
                 Discharge documents requiring attending physician review, audit verification, or approval signature.
               </p>
             </div>
@@ -38,7 +38,7 @@ export const ReviewQueuePage: React.FC<Props> = ({ documents, onSelectDocumentFo
         <div className="rounded-[28px] bg-[#EBE7E0] border border-[#D9D1C5] p-12 text-center text-[#3E4234]">
           <ShieldCheck className="h-12 w-12 text-[#5A5A40] mx-auto mb-3" />
           <h4 className="font-serif italic text-xl">Review Queue Clear!</h4>
-          <p className="text-xs text-[#8C8476] mt-1">
+          <p className="text-xs text-[#665F54] mt-1">
             All generated discharge handouts have passed safety audit and received clinician approval.
           </p>
         </div>
@@ -63,21 +63,21 @@ export const ReviewQueuePage: React.FC<Props> = ({ documents, onSelectDocumentFo
                     <span className="text-xs font-mono text-[#5A5A40] font-bold">
                       ({doc.verifiedData?.patient.patientId.value || 'N/A'})
                     </span>
-                    <span className="text-xs font-bold text-[#8C8476] uppercase">
+                    <span className="text-xs font-bold text-[#665F54] uppercase">
                       • Language: {doc.generatedReport?.language || 'en'}
                     </span>
                   </div>
 
-                  <p className="text-xs text-[#8C8476]">
+                  <p className="text-xs text-[#665F54]">
                     Version: <strong>v{doc.generatedReport?.version || 1}</strong> • Updated:{' '}
                     {new Date(doc.updatedAt).toLocaleString()}
                   </p>
 
                   {audit && (
                     <div className="flex items-center gap-3 pt-1">
-                      <span className="text-xs text-[#8C8476] font-medium">Audit Results:</span>
+                      <span className="text-xs text-[#665F54] font-medium">Audit Results:</span>
                       <StatusBadge status={audit.overallStatus} size="sm" />
-                      <span className="text-xs text-[#8C8476]">
+                      <span className="text-xs text-[#665F54]">
                         ({audit.criticalCount} Critical, {audit.warningCount} Warnings)
                       </span>
                     </div>

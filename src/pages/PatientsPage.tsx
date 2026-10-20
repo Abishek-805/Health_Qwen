@@ -26,15 +26,6 @@ export const PatientsPage: React.FC<Props> = ({
     diagnosis: string;
   }>();
 
-  // Add sample patients if repository is small
-  const defaultPatients = [
-    { name: 'Rajesh Kumar', id: 'PAT-88492', age: '54 Yrs', gender: 'Male', lastDischargeDate: '2026-08-11', docCount: 2, diagnosis: 'Post Percutaneous Coronary Intervention (PCI)' },
-    { name: 'Meena Sundaram', id: 'PAT-99104', age: '62 Yrs', gender: 'Female', lastDischargeDate: '2026-08-10', docCount: 1, diagnosis: 'Type 2 Diabetes Mellitus with Right Diabetic Foot Ulcer' },
-    { name: 'Anita Patel', id: 'PAT-77201', age: '48 Yrs', gender: 'Female', lastDischargeDate: '2026-08-05', docCount: 1, diagnosis: 'Laparoscopic Cholecystectomy' },
-    { name: 'David Miller', id: 'PAT-55102', age: '67 Yrs', gender: 'Male', lastDischargeDate: '2026-07-29', docCount: 1, diagnosis: 'Acute Decompensated Heart Failure' },
-  ];
-
-  defaultPatients.forEach((p) => patientMap.set(p.id, p));
 
   documents.forEach((d) => {
     if (d.verifiedData?.patient) {
@@ -72,14 +63,14 @@ export const PatientsPage: React.FC<Props> = ({
           <h3 className="font-serif italic text-xl text-[#3E4234] flex items-center gap-2">
             <Users className="h-5 w-5 text-[#5A5A40]" /> Patient Records Directory
           </h3>
-          <p className="text-xs text-[#8C8476] mt-0.5">
+          <p className="text-xs text-[#665F54] mt-0.5">
             Search patient records, inspect historic discharge handouts, and launch isolated clinical instruction wizards.
           </p>
         </div>
 
         <div className="relative w-full md:w-80">
-          <Search className="absolute left-3.5 top-3 h-4 w-4 text-[#8C8476]" />
-          <input
+          <Search className="absolute left-3.5 top-3 h-4 w-4 text-[#665F54]" />
+          <input aria-label="Search by Patient Name, ID or Diagnosis..."
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -111,8 +102,8 @@ export const PatientsPage: React.FC<Props> = ({
                   <Stethoscope className="h-3.5 w-3.5 text-[#5A5A40] shrink-0" />
                   <span className="truncate">{patient.diagnosis}</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-[#8C8476]">
-                  <HeartPulse className="h-3.5 w-3.5 text-[#8C8476] shrink-0" />
+                <div className="flex items-center gap-1.5 text-[#665F54]">
+                  <HeartPulse className="h-3.5 w-3.5 text-[#665F54] shrink-0" />
                   <span>Last discharge: {patient.lastDischargeDate} • {patient.docCount} Handout(s)</span>
                 </div>
               </div>
@@ -121,7 +112,7 @@ export const PatientsPage: React.FC<Props> = ({
             <div className="flex items-center justify-between border-t border-[#F5F5F0] pt-3">
               <button
                 onClick={() => onSelectPatient(patient.name, patient.id)}
-                className="text-xs font-bold text-[#8C8476] hover:text-[#5A5A40] cursor-pointer transition-colors"
+                className="text-xs font-bold text-[#665F54] hover:text-[#5A5A40] cursor-pointer transition-colors"
               >
                 Set Active Context
               </button>

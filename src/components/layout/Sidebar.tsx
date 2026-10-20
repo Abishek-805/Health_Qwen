@@ -51,7 +51,7 @@ export const Sidebar: React.FC<Props> = ({
           </div>
           <div>
             <h1 className="font-serif italic text-base font-medium text-[#3E4234] tracking-tight">Clinical Discharge</h1>
-            <p className="text-[10px] text-[#8C8476] font-semibold uppercase tracking-wider">Human-in-the-Loop AI</p>
+            <p className="text-[10px] text-[#665F54] font-semibold uppercase tracking-wider">Human-in-the-Loop AI</p>
           </div>
         </div>
 
@@ -62,7 +62,7 @@ export const Sidebar: React.FC<Props> = ({
 
         {/* Navigation Menu */}
         <nav className="flex flex-col gap-1.5">
-          <p className="text-[10px] uppercase tracking-widest text-[#8C8476] font-semibold px-2">Navigation</p>
+          <p className="text-[10px] uppercase tracking-widest text-[#665F54] font-semibold px-2">Navigation</p>
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -97,12 +97,12 @@ export const Sidebar: React.FC<Props> = ({
 
       {/* Clinician Profile Footer */}
       <div className="border-t border-[#D9D1C5] p-4 bg-[#D9D1C5]/30">
-        <div className="flex items-center justify-between text-xs text-[#8C8476] mb-2">
+        <div className="flex items-center justify-between text-xs text-[#665F54] mb-2">
           <span className="flex items-center gap-1 font-semibold text-[11px] text-[#5A5A40]">
-            <Building2 className="h-3.5 w-3.5 text-[#5A5A40]" /> Apollo Health City
+            <Building2 className="h-3.5 w-3.5 text-[#5A5A40]" /> Local workspace
           </span>
           <span className="text-[10px] bg-[#5A5A40]/10 text-[#5A5A40] px-1.5 py-0.5 rounded-full font-bold border border-[#5A5A40]/20">
-            DEMO AUTH
+            SIGNED IN
           </span>
         </div>
         <div className="flex items-center gap-2.5">
@@ -110,22 +110,8 @@ export const Sidebar: React.FC<Props> = ({
             <UserCheck className="h-4 w-4" />
           </div>
           <div className="flex-1 overflow-hidden">
-            <select
-              value={clinicianName}
-              onChange={(e) => setClinicianName(e.target.value)}
-              className="w-full truncate bg-transparent text-xs font-bold text-[#3E4234] focus:outline-none cursor-pointer"
-            >
-              <option value="Dr. Sarah Jenkins, MD" className="bg-[#EBE7E0] text-[#3E4234]">
-                Dr. Sarah Jenkins, MD (Cardiology)
-              </option>
-              <option value="Dr. Rajesh Varma, MS" className="bg-[#EBE7E0] text-[#3E4234]">
-                Dr. Rajesh Varma, MS (Surgery)
-              </option>
-              <option value="Dr. Ananya Iyer, MD" className="bg-[#EBE7E0] text-[#3E4234]">
-                Dr. Ananya Iyer, MD (Internal Med)
-              </option>
-            </select>
-            <p className="text-[10px] text-[#8C8476] truncate">Attending Clinician (Authoritative)</p>
+            <p className="truncate text-xs font-bold text-[#3E4234]">{clinicianName}</p>
+            <p className="text-[10px] text-[#665F54] truncate">Attending Clinician (Authoritative)</p>
           </div>
         </div>
       </div>

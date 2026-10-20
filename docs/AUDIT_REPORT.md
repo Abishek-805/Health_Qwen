@@ -1,94 +1,84 @@
-# Project audit report
+# Audit remediation and verification report
 
-Audit date: 20 October 2026 (Asia/Kolkata). Repository: Abishek-805/Health_Qwen. Baseline commit: b6d79bd. Scope: tracked source, configuration, dependency lock, API boundaries, clinical workflow, storage, OCR/model services, PDF delivery, Windows lifecycle, documentation, and build/runtime checks.
+Date: **20 October 2026**, Asia/Kolkata. Repository: **Abishek-805/Health_Qwen**. This report replaces the initial audit recorded in commit `9e4f183`. It covers source/configuration, dependencies, authentication, storage/recovery, approval/PDF trust boundaries, extraction/OCR, audit behavior, UI, Windows lifecycle, and local build/runtime verification.
 
-## Assessment
+## Result and supported scope
 
-The project runs as a local demonstration and passes the exercised functional checks. It is not ready for patient-facing or shared clinical deployment. Authentication, trustworthy approval enforcement, durable storage, clinical validation, and dependency remediation remain required. Passing tests establish the tested examples, not clinical correctness or regulatory compliance.
+The identified software defects were repaired or bounded by explicit safeguards for an **authenticated, single-clinician, localhost-only application**. The dependency scan now reports **zero known vulnerabilities**. Saved data survives restarts, server-owned approvals cannot be supplied by clients, and uncertain/unexecuted checks cannot silently become successful checks.
 
-This audit is a code and local execution review, not a penetration test, model certification, or legal/compliance assessment. The existing local .env was preserved and not printed. Real patient data was not intentionally submitted. Cloud model access was not validated.
+Clinical correctness is **not certified**. A real model-generated unsupported medication instruction was observed during synthetic browser testing; evidence validation flagged it, and the verification UI was strengthened to expose and block unresolved uncertain fields. This is why clinician source review remains mandatory. Comprehensive clinical evaluation and external/cloud/platform validation remain separate requirements; they are not marked complete by passing software tests.
 
-## Architecture and data flow
+## Original findings and disposition
 
-React implements a six-step upload, verification, generation, audit, review, and approval flow. Express owns /api and mounts Vite middleware in development or dist static assets in production. Uploaded files stay in memory for parsing; images can also be written into OS temporary storage by the Python OCR fallback. Extraction uses Qwen through node-llama-cpp; evidence validation is heuristic. English report generation is template based. The audit combines deterministic checks and local semantic heuristics, with optional Gemini findings. Documents, patient indexes, and settings are process-local arrays/objects. PDF rendering is server side via jsPDF.
-
-Strengths: separate service/repository/route layers; explicit source evidence fields; a 15 MB upload limit; OCR quality gating on the extraction route; report/audit version checks; critical audit blocking in the standard approval flow; PDF content and HTTP attachment tests; ignored environment/model files.
-
-## Findings and remediation
-
-Severity here reflects application impact; dependency severities below are npm's classifications. Locations name the relevant implementation for reproducibility.
-
-| ID | Severity | Evidence and impact | Required remediation |
-| --- | --- | --- | --- |
-| A01 | Critical | server.ts binds 0.0.0.0. server/routes/api.ts exposes documents, patients, settings, edits, and approval without authentication or authorization. Any reachable client can read or modify records and claim a clinician identity. | Authenticate users, enforce server-side roles and record access, derive reviewer identity from the session, and isolate network access until implemented. |
-| A02 | Critical | handleCreateDocument accepts approvalStatus, approvedBy, generatedReport, and auditResult. handleUpdateDocument forwards req.body into a repository object merge. resolvePdfDocument accepts a full client-supplied document; validateApprovedPdfDocument trusts its audit/approval fields. Existing fixture tests generate accepted PDFs by POSTing such documents without authenticated review. | Restrict mutable fields; store trusted versioned artifacts; resolve PDF requests by ID; enforce server-owned audit/approval transitions and reviewer identity. Reject crafted approval/audit metadata. |
-| A03 | High | documentRepository.ts stores records/settings only in memory. Restarts, crashes, and tsx watch reloads clear everything. There are no backups, migrations, retention controls, or append-only approval records. | Add durable transactional storage, backup/restore checks, retention rules, and immutable approval history before operational use. The new launcher avoids backend watch reloads but does not solve persistence. |
-| A04 | High | documentSourceService.ts logs the first 500 extracted characters; localClinicalExtractionService.ts logs the first 300 response characters; PDF endpoint logs patient-derived filenames. Python OCR removes temp files only after successful execSync, leaving image/script files when Python fails. | Remove clinical content from logs, redact identifiers/errors, use controlled retention, and move all temp-file cleanup into finally blocks. Treat existing logs and temporary files as potentially sensitive. |
-| A05 | High | deterministicAudit.ts uses substring/keyword checks. Dose comparison accepts any matching number in a medication sentence rather than verifying the dose and unit together. sourceEvidenceValidator.ts accepts evidence OR value OR 75% token overlap; this can mark an unsupported value FOUND when its evidence matches elsewhere. | Add adversarial tests for doses, units, negation, contradictory evidence, and cross-field contamination. Validate typed clinical facts in context. Obtain clinician-reviewed evaluation datasets and measured error rates. |
-| A06 | High | semanticAudit.ts races AI against 2.5 seconds and returns local findings on timeout; geminiService.ts returns [] on missing key/failure. hybridAudit.ts initializes all 18 categories to PASS, even though a missing/failed semantic check is not proof of coverage. | Record which checks ran and distinguish not evaluated/unavailable from PASS. Define whether unavailable required checks block approval. Cancel timed-out requests. |
-| A07 | High | Routes accept broad JSON objects with limited shape checks and TypeScript casts. Uploads trust supplied MIME metadata; memory uploads, 25 MB JSON bodies, OCR, and inference have no request rate limit, concurrency budget, or complete cancellation boundary. | Validate schemas and file signatures at the API boundary; cap resource use, pages, concurrency, duration, and request rates. Return sanitized consistent errors. |
-| A08 | High | Optional generation/audit and section regeneration send clinical content to Google. regenerateSectionAi is not gated by GEMINI_GENERATION_ENABLED. /api/ai-status makes a cloud request when configured. | Make cloud processing explicit per operation, validate configuration, document data processing/retention requirements, and enforce a coherent opt-in policy before sensitive use. |
-| A09 | Medium | hybridAudit.ts computes passCount as 18 minus a boolean for critical findings and a boolean for review findings, rather than counting passing categories. Many failed categories can still display 16 passes. | Derive counts from categorySummaries and add multi-category regression cases. |
-| A10 | Medium | documentRepository.createDocument increments patient.documentCount when replacing an existing ID. updateDocument can change identity fields without rebuilding patient indexes, and does not refresh updatedAt itself. | Preserve IDs, update indexes consistently, derive counts from records, and set server timestamps. Test replacement and patient reassignment. |
-| A11 | Medium | PatientsPage.tsx always injects sample patients. App.tsx supplies demo clinician/hospital identity. SettingsPage.tsx reports saved status while only changing React state and does not persist through /api/settings. | Label/remove demo data and identities, wire settings to a durable backend, and distinguish unsaved session edits. |
-| A12 | Medium | download-model.ts downloads from a mutable main URL and considers a sufficiently large file complete without a hash. Redirect depth, network timeout, and partial-download handling are incomplete. | Pin model revision and checksum, download to a temporary path, bound time/redirects, then atomically publish verified weights. |
-| A13 | Medium | localClinicalExtractionService.ts treats any truthy llama.gpu as CUDA. This audit observed gpu=vulkan while logs reported CUDA. Shared cached model initialization/inference does not demonstrate a tested concurrent-request policy. | Report the actual backend; serialize or bound inference and test concurrent initialization/resource exhaustion on supported hardware. |
-| A14 | Medium | npm test runs seven top-level cases, not every server/tests script. Some tests require a local 1.12 GB model, native runtime, OCR assets, and optional Python. There is no checked-in CI workflow, Dockerfile, or production deployment configuration. | Separate deterministic checks from hardware benchmarks; add repeatable CI and runtime smoke tests. Keep setup documentation aligned with real coverage. |
-| A15 | Low | Build emits a frontend JavaScript chunk over 500 kB (about 714 kB in this run). TypeScript checking is called lint, without a style/accessibility linter. Several form labels lack explicit input association in SettingsPage.tsx. | Measure loading cost before splitting bundles; audit keyboard focus, label associations, contrast, and screen-reader flow with browser testing. |
-
-## Dependency audit snapshot
-
-`npm audit --json` reported **10 affected package entries: 3 critical, 3 high, 3 moderate, 1 low**. Raw output: [dependency-audit.json](dependency-audit.json). These are package-level findings, including transitive propagation; they are not ten demonstrated exploits in this app. Exploitability depends on reachability and package usage. No dependency remediation was applied in this change.
-
-| Package | Reported severity | npm fix indication |
+| ID | Initial issue | Resolution and current boundary |
 | --- | --- | --- |
-| @simple-git/argv-parser | Critical | Suggested node-llama-cpp major-version change |
-| proxy-addr | Critical | Fix available |
-| simple-git | Critical | Suggested node-llama-cpp major-version change |
-| multer | High | Fix available |
-| node-llama-cpp | High | Suggested downgrade to 2.0.0; requires deliberate compatibility review |
-| source-map-js | High | Fix available |
-| body-parser | Moderate | Fix available |
-| express | Moderate | Fix available |
-| qs | Moderate | Fix available |
-| dompurify | Low | Fix available |
+| A01 | Unauthenticated patient/settings/approval APIs on all interfaces | **Fixed for local use.** Bind to 127.0.0.1; HTTP Basic authentication protects UI and API; generated credentials use a salted scrypt hash, or an explicit configured account. Foreign hosts/origins and cross-site requests are denied. One authenticated account owns this workspace; no LAN or multi-user deployment is supported. |
+| A02 | Forged client audit/approval and full-payload PDF bypass | **Fixed.** Document writes accept an allowlist; audits and versions are computed by the server; edits remove approval. Approval binds the authenticated actor and reviewed report version. PDFs resolve only saved approved IDs and check current report/audit versions and critical/unavailable status. |
+| A03 | Restart data loss, no durable approval history/recovery | **Fixed.** SQLite WAL storage, explicit schema version, transactional saves, append-only event history, consistent backup, integrity-checked restore to a new file. Compare-and-swap version checks protect writes and approvals against intervening changes; stale browser saves return 409. Storage/backups require OS access controls and disk encryption. |
+| A04 | Clinical text/filenames in logs; Python OCR temp-file leaks | **Fixed in current paths.** Removed clinical previews and patient filename logging. Removed the unsupported Python/PaddleOCR fallback and temporary clinical-image files; supported OCR uses Tesseract workers with cleanup. Existing historical files/logs outside the current code were not destructively purged. |
+| A05 | Weak evidence matching and medication numeric comparisons | **Strengthened and regression tested.** Value and quoted evidence must both agree; token overlap cannot establish a fact. Numeric decimal boundaries are preserved. Doses include units and attached quantities, schedule changes are checked, uncertain fields cannot be confirmed, and all care fields are editable. This remains heuristic checking, not validated medical reasoning or proof that extraction is complete. |
+| A06 | Failed semantic checks silently appeared to pass | **Fixed.** Requested cloud audit failures, invalid findings, and timeouts produce unavailable status and block approval. Unevaluated categories remain NOT EVALUATED even if a cloud call completes. Coverage limitations and actual check counts appear in the UI; no “verified safe” label is applied to unevaluated categories. |
+| A07 | Weak request shapes/file validation/resource limits | **Fixed/bounded for local use.** Explicit clinical/report/settings parsing; protected write fields rejected; matching upload signatures/MIME required; JSON, multipart, source-length, PDF-page, model-token, concurrency, request-rate, OCR, and inference limits. Errors are sanitized. This is not a malicious-file penetration or sustained-load certification of native libraries. |
+| A08 | Cloud processing without a coherent opt-in | **Fixed.** Client construction requires CLOUD_PROCESSING_ENABLED=true and an explicit model; optional audit/rewrite switches are separate. Default extraction and English generation are local. Cloud rewriting reports errors instead of pretending to apply changes. Unused cloud extraction code was removed; no speculative model identifier is assumed. |
+| A09 | Incorrect passing-category count | **Fixed.** Count actual PASS category summaries. The UI separately displays checked and unevaluated categories, with conservative wording. |
+| A10 | Patient index/count/identity/timestamp inconsistencies | **Fixed.** Derive patient indexes/counts from saved records. Server-generated IDs remain immutable; creation times are retained and update times refreshed. Stale writes are rejected rather than overwriting newer reports. |
+| A11 | Injected sample patients, editable demo identity, fake settings saves | **Fixed.** Removed injected patients and clinician impersonation controls. Settings persist to SQLite, load on startup, and only show success after saving. Approval identity comes from authentication. Explicit demo input buttons remain labeled as demos. |
+| A12 | Mutable model URL, size-only integrity check, partial downloads | **Fixed.** Pin official revision and SHA-256, stream into a unique temporary file, verify before atomic publication, preserve old weights on failure, and verify again at initialization. Download cancellation and redirect bounds are supplied by native fetch. |
+| A13 | Vulkan mislabeled CUDA; unbounded concurrent model use | **Fixed.** Report actual selected backend and model readiness; deduplicate initialization and allow one inference at a time. Tokenize source/system input against the pinned context budget before generation. The updated 8192-token context was exercised on this Windows Vulkan machine. Token-speed estimates remain approximate. |
+| A14 | Misleading test entrypoint and missing repeatable CI | **Fixed.** Separate deterministic/security/PDF tests from hardware benchmarks. Added Node 24 GitHub Actions checks for clean installation, typing, tests, build, and npm audit. A clean npm ci completed locally. Remote workflow execution must be checked separately from local results. |
+| A15 | Large frontend bundle and accessibility gaps | **Improved and locally checked.** Removed the duplicate browser PDF renderer and reused the real server renderer in tests. Frontend JS fell from about 714 kB to about 318 kB, with no >500 kB chunk warning. Added labels, keyboard access/current-step state, focus outlines, darker small text, and an accessible status refresh button. Formal WCAG/screen-reader certification is not claimed. |
 
-The upload-facing multer finding is relevant to reachable multipart routes; see the [reviewed crafted-field denial-of-service advisory](https://github.com/advisories/GHSA-wc9g-mqfw-jrwm). The simple-git findings involve unsafe Git invocation paths; route-level exploitation was not established; see the [reviewed trailer-command advisory](https://github.com/advisories/GHSA-x6jw-m9v5-85vh). Both pages were checked during this audit. Evaluate all advisory records and installed dependency paths before choosing upgrades. Do not apply npm audit fix --force blindly: the suggested node-llama-cpp downgrade can break native/model APIs.
+## Additional defects found during browser verification
 
-## Changes delivered
+- Fixed the array “Add” updater writing a literal `section` property instead of the selected array.
+- Added verification/editing for activity restrictions, wound care, warning signs, emergency instructions, and additional notes.
+- Exposed uncertain medication instructions/duration/name and follow-up status; corrected editing/status updates and reject unresolved UNCLEAR values at the server boundary.
+- Included known allergies and patient ID in the English template; removed the invented generic outpatient-helpline instruction.
+- Fixed cloud rewrite request/response field mismatch and made failed cloud rewriting visible.
+- Removed optimistic save fallback: failed saves no longer masquerade as saved records. Await writes and use server-returned versions/audits.
+- Block approval navigation while report text is unsaved; preserve the saved record identity when revising verified source data. Existing records can reopen their saved source fields.
+- Fixed native form PDF downloads being rejected by the origin guard: use a same-origin referrer policy while continuing to reject foreign/null origins. Actual browser PDF download succeeded after the fix.
+- Fixed production build/start mode so an inherited development environment cannot ship the development React bundle or start Vite instead of built assets.
+- Fixed the Windows readiness probe to use the actual IPv4 port and wait for HTTP readiness, including cold starts and custom ports.
+- Removed external web-font requests and old manual diagnostics that relied on forged approval payloads or wrote to Downloads. Their coverage is replaced by maintained tests.
 
-- Added root start.bat and stop.bat with a shared PowerShell helper, per-checkout process identity and start time, duplicate-start protection, serialized lifecycle operations, hidden background execution, logs, and stale-PID protection. Stop targets only the recorded process tree. It is a force stop; memory records are lost.
-- Added a Windows regression script for start/health/duplicate start/stop/repeated stop/stale identity. Runtime lock/log/state files are ignored by Git and Vite watching.
-- Moved scratch TypeScript tools to scripts/diagnostics, updating imports and usage paths; moved screenshots to docs/screenshots and the historical cleanup manifest to docs. No diagnostic files were discarded.
-- Kept source/config entry points and existing OCR data in place. Removed the second, obsolete bun.lock; npm package-lock.json remains authoritative. Renamed the placeholder npm package consistently in both manifests.
-- Rewrote README and .env.example to describe the actual local/cloud behavior, model requirement, correct endpoints, environment controls, storage limits, commands, and troubleshooting. Existing .env and model weights were preserved.
-- Fixed a reproduced production startup failure: CommonJS output attempted to require the ESM node-llama-cpp graph and threw ERR_REQUIRE_ASYNC_MODULE. Build/start now use dist/server.js as ESM.
+## Dependency remediation
 
-## Verification
+Initial snapshot: **10 affected package entries: 3 critical, 3 high, 3 moderate, 1 low**. Current snapshot: **0 vulnerabilities**, from npm audit after targeted compatible updates and transitive fixes. See [raw dependency audit](dependency-audit.json).
 
-Host: Windows, Node 24.19.0, npm 11.17.0, existing installed dependencies, existing local model (1,117,320,736 bytes). A fresh npm ci was not performed, so reproducibility on a clean machine remains unverified.
+Updated Express to 4.22.3, Multer to 2.4.0, and node-llama-cpp to 3.22.2. Explicit transitive overrides pin compatible patched simple-git 4.0.2+ and @simple-git/argv-parser 2.0.1+. Other affected transitive packages were updated through npm audit fix. No forced downgrade of the inference engine was applied. A zero-advisory scan is not proof of absence of all vulnerabilities.
 
-| Check | Result |
+The initial native install probe stalled on this host. Installation was repeated with the package's documented postinstall opt-out; actual model/backend initialization and inference were then tested. Clean npm ci succeeded with NODE_LLAMA_CPP_POSTINSTALL=skip. Reinstalling dependencies does not itself certify GPU readiness.
+
+## Verification evidence
+
+Environment: Windows, Node **24.19.0**, npm **11.17.0**, pinned Qwen weights, actual **Vulkan** backend. Tests used synthetic examples in isolated databases; no real patient data was intentionally submitted and no live cloud clinical calls were enabled.
+
+| Check | Observed result |
 | --- | --- |
-| npm run lint | Passed TypeScript checking, including relocated diagnostics |
-| npm run build | Passed; large frontend chunk warning remains |
-| npm test | 7/7 passed, including Qwen extraction and image OCR benchmark |
-| PDF endpoint suite | 18 passed, 0 failed; binary content and HTTP delivery checked |
-| Step 6 architecture regression | Passed |
-| UI integration acceptance script | 18/18 passed; service-level script, not browser automation |
-| Windows lifecycle regression | Passed: start, health, duplicate start, stop, repeated stop, stale PID protection |
-| Production runtime | Original server.cjs failed; updated server.js served /api/health and / with HTTP 200 on port 3302 |
-| npm audit | Completed; exit failure expected because vulnerabilities remain |
-| Git diff whitespace validation | Passed |
+| Clean npm ci | Passed with native install probe skipped; native runtime tested separately |
+| npm run lint | TypeScript checks passed |
+| npm test | Hardening suites passed; 18 PDF/content/HTTP tests passed; PDF architecture check passed |
+| Hardening coverage | Missing/wrong auth, foreign/null origin, hostile Host, forged approval/PDF body, malformed/uncertain source, upload spoofing, server audit/versioning, stale edit/approval, invalidation after edits, dose/unit/frequency/duration, process-boundary persistence, backup/restore, no-overwrite restore, append-only events, unavailable cloud audit |
+| npm run test:model | **8/8 passed**, including actual OCR/Qwen and oversized-token rejection |
+| npm run test:integration | **18/18 service acceptance checks passed** on the updated engine |
+| npm run test:windows | Start, health, duplicate start, stop, repeated stop, stale PID protection checked |
+| Model integrity | Pinned full-file SHA-256 verified; existing weights preserved |
+| npm run build | Frontend and ESM server built; main frontend bundle about 318 kB |
+| npm audit | **0 known vulnerabilities** |
+| Browser, production mode | Local authentication; empty patient directory; settings save/reload; synthetic extraction; report edits/re-audit; authenticated sign-off; record survived server restart; native PDF download; unsaved edits disable approval and block step navigation |
+| Downloaded PDF | Native file named Discharge_Instructions_Alex_Example_TEST-001_v2.pdf; synthetic test artifact, outside the Git repository |
 
-PaddleOCR was absent; tests printed ModuleNotFoundError and successfully used Tesseract. GPU logs identified Vulkan under a CUDA label (A13). Full browser interaction, accessibility, malicious-upload stress tests, multi-user concurrency, fresh model download, Gemini connectivity, clinical accuracy across representative populations, and backup/restore were not verified.
+[Browser verification image](screenshots/audit-verification.jpg) shows the persisted synthetic record, reviewed audit status, authenticated reviewer, and approved download action. The screenshot is a synthetic test result, not a clinical endorsement.
 
-## Recommended order of work
+## Integrity and operational limits
 
-1. Restrict access immediately and use synthetic data. Remove clinical log content and ensure temporary-file cleanup.
-2. Implement trusted authentication, server-owned document/audit/approval transitions, schema validation, and durable storage together; test bypass attempts and restart recovery.
-3. Remediate dependencies with targeted compatible upgrades and rerun native extraction, OCR, upload, PDF, and production checks.
-4. Strengthen clinical checks and distinguish unavailable checks from passing checks; add clinician-reviewed adversarial benchmarks.
-5. Fix patient/settings consistency, model verification, resource limits, and telemetry; add repeatable CI and browser accessibility testing.
+- Keep `.env`, `.runtime/`, `data/`, weights, and backups private and out of Git. Credential generation and database setup do not overwrite existing configuration. The stop script targets only its recorded process tree.
+- SQLite transactions protect committed data; original uploads are not retained. Keep the original clinical source for comparison. Backups/history also contain clinical information; retention, encryption, and restore rehearsals are operational responsibilities.
+- Explicit account/version confirmation prevents impersonation and accidental stale approval within this local app. It does not validate professional licensing or provide an enterprise identity provider, shared access policy, or legally certified digital signature.
+- The model can omit or invent facts. Evidence checks, stricter uncertainty handling, exact schedule checks, and explicit review reduce risk; representative clinician-labeled accuracy evaluation is still required before real clinical use. Do not infer complete semantic coverage from the 18 category names.
+- Live Gemini availability/billing, broad clinical accuracy, adversarial native-file stress tests, every assistive technology, Linux/macOS GPU inference, and regulatory compliance were not verified. No claim of public deployment readiness is made.
 
-The organizational and launcher work does not remediate A01-A15. The production module-format defect is fixed; the remaining findings are an explicit backlog.
+## References
+
+Model pin and checksum were checked against the [official Qwen repository metadata](https://huggingface.co/api/models/Qwen/Qwen2.5-1.5B-Instruct-GGUF?blobs=true): revision `91cad51170dc346986eccefdc2dd33a9da36ead9`, SHA-256 `6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e`, size 1,117,320,736 bytes. SQLite uses the [Node platform API](https://nodejs.org/docs/latest-v24.x/api/sqlite.html). Origin/referrer behavior was checked against the [Fetch standard](https://fetch.spec.whatwg.org/#append-a-request-origin-header) and the actual browser result.

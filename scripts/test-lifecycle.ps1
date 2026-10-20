@@ -19,7 +19,7 @@ try {
     if (Test-Path -LiteralPath $statePath) { throw 'Stale state was not cleared.' }
     Invoke-App start
     $before = Get-Content -LiteralPath $statePath -Raw
-    $health = Invoke-RestMethod http://localhost:3301/api/health
+    $health = Invoke-RestMethod http://127.0.0.1:3301/api/health
     if ($health.status -ne 'ok') { throw 'Health check failed.' }
     Invoke-App start
     if ((Get-Content -LiteralPath $statePath -Raw) -ne $before) { throw 'Duplicate start changed the managed process.' }

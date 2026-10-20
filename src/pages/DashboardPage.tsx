@@ -42,7 +42,7 @@ export const DashboardPage: React.FC<Props> = ({
         <div className="space-y-2 relative z-10">
           <div className="flex items-center gap-2">
             <span className="rounded-full bg-white/20 text-white px-3 py-0.5 text-xs font-semibold tracking-wide border border-white/30">
-              CLINICAL AI ENGINE v3.6
+              LOCAL CLINICAL WORKSPACE
             </span>
             <span className="text-white/70 text-xs italic">• Human-in-the-Loop Safety</span>
           </div>
@@ -50,7 +50,7 @@ export const DashboardPage: React.FC<Props> = ({
             Healthcare Discharge Instructions Generator
           </h1>
           <p className="text-xs text-white/80 max-w-2xl leading-relaxed">
-            Multimodal clinical extraction, 18-category hybrid safety audit, and multilingual A4 PDF generation anchored strictly to clinician-verified patient data.
+            Local clinical extraction, explicit audit coverage, and English PDF handouts. Clinician review is required before approval.
           </p>
         </div>
 
@@ -69,7 +69,7 @@ export const DashboardPage: React.FC<Props> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="rounded-[28px] bg-white p-6 shadow-xs border border-[#D9D1C5]/60 flex items-center justify-between">
           <div>
-            <span className="text-[10px] uppercase tracking-widest text-[#8C8476] font-semibold block">Total Documents</span>
+            <span className="text-[10px] uppercase tracking-widest text-[#665F54] font-semibold block">Total Documents</span>
             <span className="text-3xl font-light text-[#3E4234] mt-1 block">{totalCount}</span>
           </div>
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#F5F5F0] text-[#5A5A40]">
@@ -79,7 +79,7 @@ export const DashboardPage: React.FC<Props> = ({
 
         <div className="rounded-[28px] bg-white p-6 shadow-xs border border-[#D9D1C5]/60 flex items-center justify-between">
           <div>
-            <span className="text-[10px] uppercase tracking-widest text-[#8C8476] font-semibold block">Pending Review</span>
+            <span className="text-[10px] uppercase tracking-widest text-[#665F54] font-semibold block">Pending Review</span>
             <span className="text-3xl font-light text-[#D2B48C] mt-1 block">{pendingCount}</span>
           </div>
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#F5F5F0] text-[#D2B48C]">
@@ -89,7 +89,7 @@ export const DashboardPage: React.FC<Props> = ({
 
         <div className="rounded-[28px] bg-white p-6 shadow-xs border border-[#D9D1C5]/60 flex items-center justify-between">
           <div>
-            <span className="text-[10px] uppercase tracking-widest text-[#8C8476] font-semibold block">Approved Documents</span>
+            <span className="text-[10px] uppercase tracking-widest text-[#665F54] font-semibold block">Approved Documents</span>
             <span className="text-3xl font-light text-[#5A5A40] mt-1 block">{approvedCount}</span>
           </div>
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#F5F5F0] text-[#5A5A40]">
@@ -99,10 +99,10 @@ export const DashboardPage: React.FC<Props> = ({
 
         <div className="rounded-[28px] bg-white p-6 shadow-xs border border-[#D9D1C5]/60 flex items-center justify-between">
           <div>
-            <span className="text-[10px] uppercase tracking-widest text-[#8C8476] font-semibold block">Critical Safety Flags</span>
-            <span className="text-3xl font-light text-[#BC8F8F] mt-1 block">{criticalCount}</span>
+            <span className="text-[10px] uppercase tracking-widest text-[#665F54] font-semibold block">Critical Safety Flags</span>
+            <span className="text-3xl font-light text-[#8C4A4A] mt-1 block">{criticalCount}</span>
           </div>
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#BC8F8F]/10 text-[#BC8F8F]">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#BC8F8F]/10 text-[#8C4A4A]">
             <AlertTriangle className="h-6 w-6" />
           </div>
         </div>
@@ -115,8 +115,8 @@ export const DashboardPage: React.FC<Props> = ({
             <h3 className="font-serif italic text-xl text-[#3E4234]">
               Recent Discharge Documents
             </h3>
-            <p className="text-xs text-[#8C8476] mt-0.5">
-              Click any record to inspect audit findings or download multilingual A4 PDF handouts.
+            <p className="text-xs text-[#665F54] mt-0.5">
+              Click any record to inspect audit findings or download English A4 PDF handouts.
             </p>
           </div>
         </div>
@@ -124,7 +124,7 @@ export const DashboardPage: React.FC<Props> = ({
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="bg-[#F5F5F0] text-[#8C8476] text-[10px] uppercase tracking-wider font-semibold border-b border-[#D9D1C5]/60">
+              <tr className="bg-[#F5F5F0] text-[#665F54] text-[10px] uppercase tracking-wider font-semibold border-b border-[#D9D1C5]/60">
                 <th className="p-3.5 rounded-l-xl">Patient</th>
                 <th className="p-3.5">Patient ID</th>
                 <th className="p-3.5">Language</th>
@@ -151,7 +151,7 @@ export const DashboardPage: React.FC<Props> = ({
                       {doc.verifiedData?.patient.name.value || 'Unnamed Patient'}
                     </button>
                   </td>
-                  <td className="p-3.5 font-mono text-[#8C8476] font-bold">
+                  <td className="p-3.5 font-mono text-[#665F54] font-bold">
                     {doc.verifiedData?.patient.patientId.value || 'N/A'}
                   </td>
                   <td className="p-3.5 uppercase font-bold text-[#3E4234]">
@@ -166,7 +166,7 @@ export const DashboardPage: React.FC<Props> = ({
                   <td className="p-3.5">
                     <StatusBadge status={doc.approvalStatus} size="sm" />
                   </td>
-                  <td className="p-3.5 text-[#8C8476]">
+                  <td className="p-3.5 text-[#665F54]">
                     {new Date(doc.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </td>
                   <td className="p-3.5 text-right">

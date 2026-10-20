@@ -2,22 +2,31 @@ import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
-import { apiRouter } from './server/routes/api.js';
+import { authenticate, getCredentials } from './server/security.js';
+import { apiErrorHandler, apiRouter } from './server/routes/api.js';
 
 dotenv.config();
 
 async function startServer() {
   const app = express();
-  const PORT = Number(process.env.PORT) || 3000;
+  const PORT = Number(process.env.PORT || 3000);
+  if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) throw new Error('Invalid PORT');
+  getCredentials();
+  console.log('Local login: .runtime/login.txt (or configured APP_USERNAME / APP_PASSWORD).');
+  app.disable('x-powered-by');
+  app.use('/api', (req, res, next) => req.path === '/health' ? next() : authenticate(req, res, next));
 
   // JSON and URL-encoded body parser middleware
-  app.use(express.json({ limit: '25mb' }));
-  app.use(express.urlencoded({ extended: true, limit: '25mb' }));
+  app.use(express.json({ limit: '1mb' }));
+  app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 
   // API routes — ONE static router instance.
   // Route changes require a backend process restart (tsx watch handles this in dev);
   // never rely on per-request dynamic re-imports, which can serve stale handlers.
   app.use('/api', apiRouter);
+
+  app.use(apiErrorHandler);
+  app.use(authenticate);
 
   // Vite development middleware vs production static server
   if (process.env.NODE_ENV !== 'production') {
@@ -34,8 +43,8 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on http://0.0.0.0:${PORT}`);
+  app.listen(PORT, '127.0.0.1', () => {
+    console.log(`Server running on http://127.0.0.1:${PORT}`);
   });
 }
 

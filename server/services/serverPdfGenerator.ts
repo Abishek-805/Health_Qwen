@@ -239,7 +239,7 @@ export function generateApprovedDischargePdf(doc: DischargeDocument): ServerPdfR
 
   const verified = doc.verifiedData;
   const report = doc.generatedReport;
-  const hospital = doc.hospitalInfo?.name || 'Apollo General Hospital & Heart Center';
+  const hospital = doc.hospitalInfo?.name || 'Local healthcare workspace';
   const dept = doc.hospitalInfo?.department || 'Department of Clinical Operations';
   const approvedBy = doc.approvedBy;
 

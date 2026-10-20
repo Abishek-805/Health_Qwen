@@ -30,3 +30,7 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #8C8476;
 }
+
+@layer base {
+  :focus-visible { outline: 3px solid #3E4234; outline-offset: 3px; }
+}

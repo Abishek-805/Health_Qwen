@@ -16,6 +16,7 @@ import {
 let genAIClient: GoogleGenAI | null = null;
 
 export function getGeminiClient(): GoogleGenAI | null {
+  if (process.env.CLOUD_PROCESSING_ENABLED !== 'true' || !process.env.GEMINI_MODEL) return null;
   const apiKey = process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_BACKUP;
   if (!apiKey || apiKey === 'MY_GEMINI_API_KEY') {
     return null;
@@ -24,6 +25,7 @@ export function getGeminiClient(): GoogleGenAI | null {
     genAIClient = new GoogleGenAI({
       apiKey,
       httpOptions: {
+        timeout: 15_000,
         headers: {
           'User-Agent': 'aistudio-build',
         },
@@ -34,7 +36,7 @@ export function getGeminiClient(): GoogleGenAI | null {
 }
 
 export function getGeminiModelName(): string {
-  return process.env.GEMINI_MODEL || 'gemini-3.6-flash';
+  return process.env.GEMINI_MODEL || '';
 }
 
 export async function checkGeminiStatus(): Promise<{
@@ -42,7 +44,7 @@ export async function checkGeminiStatus(): Promise<{
   model: string;
   message: string;
 }> {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_BACKUP;
   if (!apiKey || apiKey === 'MY_GEMINI_API_KEY') {
     return {
       online: false,
@@ -161,7 +163,7 @@ export async function generateReport(
       generatedAt: new Date().toISOString(),
     };
   } catch (error: any) {
-    console.error('Gemini report generation error:', error);
+    console.error('Cloud generation failed.');
     return buildFallbackReport(verifiedData, language, version);
   }
 }
@@ -180,7 +182,7 @@ export async function runSemanticAuditAi(
   const model = getGeminiModelName();
 
   if (!ai) {
-    return [];
+    throw new Error('Cloud audit is not configured.');
   }
 
   try {
@@ -200,13 +202,15 @@ export async function runSemanticAuditAi(
       config: {
         responseMimeType: 'application/json',
         temperature: 0.1,
+        abortSignal: AbortSignal.timeout(2500),
       },
     });
 
     const cleaned = cleanJsonText(response.text || '');
     const parsed = JSON.parse(cleaned);
 
-    if (Array.isArray(parsed)) {
+    if (Array.isArray(parsed) && parsed.length <= 100) {
+      if (parsed.some((item: any) => !item || ['title', 'verifiedSourceText', 'generatedReportText', 'whyItMatters'].some(key => item[key] !== undefined && (typeof item[key] !== 'string' || item[key].length > 2000)) || !['PATIENT_INFORMATION','DIAGNOSIS','PROCEDURES','MEDICATIONS','ALLERGIES','FOLLOW_UP','OMISSIONS','NUMERIC_VALUES','DATES','DIET','ACTIVITY_RESTRICTIONS','WOUND_PROCEDURE_CARE','WARNING_SIGNS','EMERGENCY_INSTRUCTIONS','UNSUPPORTED_CLAIMS','CONTRADICTIONS','MEDICAL_MEANING','WORDING'].includes(item.category) || !['CRITICAL','HIGH','MEDIUM','LOW'].includes(item.severity) || !['PASS','REVIEW_REQUIRED','CRITICAL_ISSUE'].includes(item.status))) throw new Error('Invalid cloud audit result.');
       return parsed.map((item: any, idx: number) => ({
         id: `sem-aud-${Date.now()}-${idx}`,
         category: item.category,
@@ -220,10 +224,9 @@ export async function runSemanticAuditAi(
         isDeterministic: false,
       }));
     }
-    return [];
-  } catch (err: any) {
-    console.error('Semantic audit AI error:', err);
-    return [];
+    throw new Error('Invalid cloud audit result.');
+  } catch {
+    throw new Error('Requested cloud audit did not complete.');
   }
 }
 
@@ -238,7 +241,7 @@ export async function regenerateSectionAi(
   const model = getGeminiModelName();
 
   if (!ai) {
-    return `${currentText}\n\n[Updated per instruction: ${instruction}]`;
+    throw new Error('Cloud regeneration is not configured.');
   }
 
   try {
@@ -261,8 +264,7 @@ export async function regenerateSectionAi(
 
     return response.text?.trim() || currentText;
   } catch (err: any) {
-    console.error('Regeneration section error:', err);
-    return currentText;
+    throw new Error('Cloud regeneration failed. Edit the section manually.');
   }
 }
 
@@ -474,14 +476,14 @@ export function buildFallbackReport(
     patientId: pId,
     title: `Discharge Instructions — ${pName} (${pId})`,
     sections: {
-      summary: `Dear ${pName}, here are your clinician-verified discharge instructions following your hospital stay. Please review all sections carefully and follow the prescribed routine.`,
+      summary: `Patient ID: ${pId}. Dear ${pName}, here are your clinician-verified discharge instructions following your hospital stay. Please review all sections carefully and follow the prescribed routine.`,
       diagnosisAndProcedures: `### Primary Diagnoses\n${diagText}\n\n### Procedures Performed\n${procText}`,
       medicationInstructions: `### Your Medications\n${medsText}`,
       dietAndActivity: `### Diet Guidelines\n${dietText}\n\n### Activity Restrictions\n${actText}`,
       woundCareAndHygiene: `### Incision & Wound Care\n${woundText}`,
       followUpAppointments: `### Upcoming Appointments\n${fuText}`,
       warningSignsAndEmergency: `### Warning Signs to Watch For\n${warningText}\n\n### Emergency Action\n${emergText}`,
-      additionalInstructions: 'If you experience worsening symptoms or have questions, contact our outpatient helpline immediately.',
+      additionalInstructions: '### Known Allergies\n' + (verifiedData.allergies.map(item => '- ' + item.value).join('\n') || 'Not specified') + '\n\n### Additional Notes\n' + verifiedData.additionalNotes.map(item => '- ' + item.value).join('\n'),
     },
     rawMarkdown: 'English report',
     generatedAt: new Date().toISOString(),

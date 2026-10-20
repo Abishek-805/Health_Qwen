@@ -72,7 +72,7 @@ export const Step2Verify: React.FC<Props> = ({
   ) => {
     setData((prev) => ({
       ...prev,
-      section: [
+      [section]: [
         ...prev[section],
         { value: '', status: 'FOUND' as FieldStatus },
       ],
@@ -99,6 +99,10 @@ export const Step2Verify: React.FC<Props> = ({
         target.dosageStatus = value.trim() ? 'FOUND' : 'MISSING';
       } else if (field === 'frequency') {
         target.frequencyStatus = value.trim() ? 'FOUND' : 'MISSING';
+      } else if (field === 'instructions') {
+        target.instructionsStatus = value.trim() ? 'FOUND' : 'MISSING';
+      } else if (field === 'name') {
+        target.overallStatus = value.trim() ? 'FOUND' : 'MISSING';
       } else if (field === 'duration') {
         target.durationStatus = value.trim() ? 'FOUND' : 'MISSING';
       }
@@ -168,6 +172,8 @@ export const Step2Verify: React.FC<Props> = ({
   };
 
   const handleConfirmLock = () => {
+    const hasUnclear = (value: unknown): boolean => !!value && typeof value === 'object' && Object.entries(value).some(([key, item]) => (key.toLowerCase().endsWith('status') && item === 'UNCLEAR') || hasUnclear(item));
+    if (hasUnclear(data)) { alert('Correct or remove every UNCLEAR field before confirming. Compare each field with the original source.'); return; }
     if (!data.patient.name.value.trim() || !data.patient.patientId.value.trim()) {
       alert('Patient Name and Patient ID are required before confirming authoritative dataset.');
       return;
@@ -180,7 +186,6 @@ export const Step2Verify: React.FC<Props> = ({
       verifiedBy: {
         name: clinicianName,
         role: 'Attending Clinician',
-        licenseNumber: 'MCI-883921',
       },
     };
 
@@ -203,14 +208,14 @@ export const Step2Verify: React.FC<Props> = ({
                   HUMAN IN THE LOOP
                 </span>
               </h3>
-              <p className="text-xs text-[#8C8476] font-medium mt-0.5">
+              <p className="text-xs text-[#665F54] font-medium mt-0.5">
                 AI-extracted values must be thoroughly verified by a healthcare professional. Correct errors, add missing dosages or frequencies, and confirm accuracy.
               </p>
             </div>
           </div>
           <div className="text-right hidden sm:block">
             <div className="text-xs font-bold text-[#3E4234]">VERIFIER: {clinicianName}</div>
-            <div className="text-[10px] text-[#8C8476]">Authoritative Clinical Sign-Off</div>
+            <div className="text-[10px] text-[#665F54]">Authoritative Clinical Sign-Off</div>
           </div>
         </div>
       </div>
@@ -227,7 +232,7 @@ export const Step2Verify: React.FC<Props> = ({
                 <label className="text-xs font-bold text-slate-700">Patient Name *</label>
                 <StatusBadge status={data.patient.name.status} size="sm" />
               </div>
-              <input
+              <input aria-label="Full Patient Name"
                 type="text"
                 value={data.patient.name.value}
                 onChange={(e) => updatePatientField('name', e.target.value)}
@@ -240,7 +245,7 @@ export const Step2Verify: React.FC<Props> = ({
                 <label className="text-xs font-bold text-slate-700">Patient ID *</label>
                 <StatusBadge status={data.patient.patientId.status} size="sm" />
               </div>
-              <input
+              <input aria-label="e.g. PAT-88492"
                 type="text"
                 value={data.patient.patientId.value}
                 onChange={(e) => updatePatientField('patientId', e.target.value)}
@@ -253,7 +258,7 @@ export const Step2Verify: React.FC<Props> = ({
                 <label className="text-xs font-bold text-slate-700">Age</label>
                 <StatusBadge status={data.patient.age.status} size="sm" />
               </div>
-              <input
+              <input aria-label="Age in years"
                 type="text"
                 value={data.patient.age.value}
                 onChange={(e) => updatePatientField('age', e.target.value)}
@@ -266,7 +271,7 @@ export const Step2Verify: React.FC<Props> = ({
                 <label className="text-xs font-bold text-slate-700">Gender</label>
                 <StatusBadge status={data.patient.gender.status} size="sm" />
               </div>
-              <input
+              <input aria-label="Male / Female / Other"
                 type="text"
                 value={data.patient.gender.value}
                 onChange={(e) => updatePatientField('gender', e.target.value)}
@@ -295,7 +300,7 @@ export const Step2Verify: React.FC<Props> = ({
             <div className="flex flex-col gap-2">
               {data.diagnosis.map((item, idx) => (
                 <div key={idx} className="flex items-center gap-2">
-                  <input
+                  <input aria-label="Clinical Diagnosis"
                     type="text"
                     value={item.value}
                     onChange={(e) => updateArrayItem('diagnosis', idx, e.target.value)}
@@ -303,12 +308,12 @@ export const Step2Verify: React.FC<Props> = ({
                     placeholder="Clinical Diagnosis"
                   />
                   <StatusBadge status={item.status} size="sm" />
-                  <button
+                  <button aria-label="Remove diagnosis"
                     type="button"
                     onClick={() => removeArrayItem('diagnosis', idx)}
                     className="text-slate-400 hover:text-rose-600 p-1 cursor-pointer"
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />
                   </button>
                 </div>
               ))}
@@ -331,7 +336,7 @@ export const Step2Verify: React.FC<Props> = ({
             <div className="flex flex-col gap-2">
               {data.procedures.map((item, idx) => (
                 <div key={idx} className="flex items-center gap-2">
-                  <input
+                  <input aria-label="Surgical / Medical Procedure"
                     type="text"
                     value={item.value}
                     onChange={(e) => updateArrayItem('procedures', idx, e.target.value)}
@@ -339,7 +344,7 @@ export const Step2Verify: React.FC<Props> = ({
                     placeholder="Surgical / Medical Procedure"
                   />
                   <StatusBadge status={item.status} size="sm" />
-                  <button
+                  <button aria-label="Remove procedures"
                     type="button"
                     onClick={() => removeArrayItem('procedures', idx)}
                     className="text-slate-400 hover:text-rose-600 p-1 cursor-pointer"
@@ -388,17 +393,18 @@ export const Step2Verify: React.FC<Props> = ({
                 {data.medications.map((med, idx) => (
                   <tr key={med.id || idx} className="hover:bg-slate-50/80">
                     <td className="p-2">
-                      <input
+                      <input aria-label="Drug Name"
                         type="text"
                         value={med.name}
                         onChange={(e) => updateMedication(idx, 'name', e.target.value)}
                         className="w-full rounded-lg border border-slate-300 p-1.5 text-xs font-bold text-slate-900"
                         placeholder="Drug Name"
                       />
+                      <StatusBadge status={med.overallStatus} size="sm" />
                     </td>
                     <td className="p-2">
                       <div className="flex items-center gap-1">
-                        <input
+                        <input aria-label="e.g. 500 mg"
                           type="text"
                           value={med.dosage}
                           onChange={(e) => updateMedication(idx, 'dosage', e.target.value)}
@@ -410,7 +416,7 @@ export const Step2Verify: React.FC<Props> = ({
                     </td>
                     <td className="p-2">
                       <div className="flex items-center gap-1">
-                        <input
+                        <input aria-label="e.g. Once daily after breakfast"
                           type="text"
                           value={med.frequency}
                           onChange={(e) => updateMedication(idx, 'frequency', e.target.value)}
@@ -421,25 +427,27 @@ export const Step2Verify: React.FC<Props> = ({
                       </div>
                     </td>
                     <td className="p-2">
-                      <input
+                      <input aria-label="e.g. 30 days"
                         type="text"
                         value={med.duration}
                         onChange={(e) => updateMedication(idx, 'duration', e.target.value)}
                         className="w-full rounded-lg border border-slate-300 p-1.5 text-xs text-slate-800"
                         placeholder="e.g. 30 days"
                       />
+                      <StatusBadge status={med.durationStatus} size="sm" />
                     </td>
                     <td className="p-2">
-                      <input
+                      <input aria-label="Medication instructions"
                         type="text"
                         value={med.instructions}
                         onChange={(e) => updateMedication(idx, 'instructions', e.target.value)}
                         className="w-full rounded-lg border border-slate-300 p-1.5 text-xs text-slate-800"
                         placeholder="Special rules"
                       />
+                      <StatusBadge status={med.instructionsStatus} size="sm" />
                     </td>
                     <td className="p-2 text-center">
-                      <button
+                      <button aria-label="Remove Medication"
                         type="button"
                         onClick={() => removeMedication(idx)}
                         className="text-slate-400 hover:text-rose-600 p-1 cursor-pointer"
@@ -472,7 +480,7 @@ export const Step2Verify: React.FC<Props> = ({
             <div className="flex flex-col gap-2">
               {data.allergies.map((item, idx) => (
                 <div key={idx} className="flex items-center gap-2">
-                  <input
+                  <input aria-label="Drug or Food Allergy"
                     type="text"
                     value={item.value}
                     onChange={(e) => updateArrayItem('allergies', idx, e.target.value)}
@@ -480,7 +488,7 @@ export const Step2Verify: React.FC<Props> = ({
                     placeholder="Drug or Food Allergy"
                   />
                   <StatusBadge status={item.status} size="sm" />
-                  <button
+                  <button aria-label="Remove allergies"
                     type="button"
                     onClick={() => removeArrayItem('allergies', idx)}
                     className="text-slate-400 hover:text-rose-600 p-1 cursor-pointer"
@@ -508,14 +516,15 @@ export const Step2Verify: React.FC<Props> = ({
             <div className="flex flex-col gap-2">
               {data.diet.map((item, idx) => (
                 <div key={idx} className="flex items-center gap-2">
-                  <input
+                  <input aria-label="Dietary restriction / rules"
                     type="text"
                     value={item.value}
                     onChange={(e) => updateArrayItem('diet', idx, e.target.value)}
                     className="flex-1 rounded-xl border border-slate-300 p-2 text-xs font-medium text-slate-800"
                     placeholder="Dietary restriction / rules"
                   />
-                  <button
+                  <StatusBadge status={item.status} size="sm" />
+                  <button aria-label="Remove diet"
                     type="button"
                     onClick={() => removeArrayItem('diet', idx)}
                     className="text-slate-400 hover:text-rose-600 p-1 cursor-pointer"
@@ -526,6 +535,20 @@ export const Step2Verify: React.FC<Props> = ({
               ))}
             </div>
           </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          {(['activityRestrictions', 'woundCare', 'warningSigns', 'emergencyInstructions', 'additionalNotes'] as const).map(section => (
+            <section key={section} className="rounded-2xl border border-slate-200 bg-white p-5">
+              <h4 className="mb-3 text-sm font-bold">{{ activityRestrictions: 'Activity restrictions', woundCare: 'Wound care', warningSigns: 'Warning signs', emergencyInstructions: 'Emergency instructions', additionalNotes: 'Additional notes' }[section]}</h4>
+              {data[section].map((item, idx) => <div key={idx} className="mb-2 flex items-center gap-2">
+                <input aria-label={section + ' ' + (idx + 1)} value={item.value} onChange={event => updateArrayItem(section, idx, event.target.value)} className="min-w-0 flex-1 rounded-xl border border-slate-300 p-2 text-xs" />
+                <StatusBadge status={item.status} size="sm" />
+                <button type="button" aria-label={'Remove ' + section + ' ' + (idx + 1)} onClick={() => removeArrayItem(section, idx)}><Trash2 className="h-4 w-4" /></button>
+              </div>)}
+              <button type="button" onClick={() => addArrayItem(section)} className="text-sm font-bold text-blue-700">Add {section.replace(/([A-Z])/g, ' $1').toLowerCase()}</button>
+            </section>
+          ))}
         </div>
 
         {/* Section 5: Follow-Up Appointments */}
@@ -545,27 +568,27 @@ export const Step2Verify: React.FC<Props> = ({
           <div className="flex flex-col gap-3">
             {data.followUp.map((fu, idx) => (
               <div key={fu.id || idx} className="grid grid-cols-1 md:grid-cols-5 gap-2 rounded-xl border border-slate-200 p-3 bg-slate-50/50">
-                <input
+                <input aria-label="Doctor / Clinic Name"
                   type="text"
                   value={fu.provider}
                   onChange={(e) => updateFollowUp(idx, 'provider', e.target.value)}
                   className="rounded-lg border border-slate-300 p-1.5 text-xs font-bold text-slate-800"
                   placeholder="Doctor / Clinic Name"
                 />
-                <input
+                <input aria-label="date"
                   type="date"
                   value={fu.date}
                   onChange={(e) => updateFollowUp(idx, 'date', e.target.value)}
                   className="rounded-lg border border-slate-300 p-1.5 text-xs text-slate-800"
                 />
-                <input
+                <input aria-label="Time (e.g. 10:30 AM)"
                   type="text"
                   value={fu.time}
                   onChange={(e) => updateFollowUp(idx, 'time', e.target.value)}
                   className="rounded-lg border border-slate-300 p-1.5 text-xs text-slate-800"
                   placeholder="Time (e.g. 10:30 AM)"
                 />
-                <input
+                <input aria-label="Clinic Location / Room"
                   type="text"
                   value={fu.location}
                   onChange={(e) => updateFollowUp(idx, 'location', e.target.value)}
@@ -573,14 +596,15 @@ export const Step2Verify: React.FC<Props> = ({
                   placeholder="Clinic Location / Room"
                 />
                 <div className="flex items-center gap-2">
-                  <input
+                  <input aria-label="Instructions"
                     type="text"
                     value={fu.instructions}
                     onChange={(e) => updateFollowUp(idx, 'instructions', e.target.value)}
                     className="flex-1 rounded-lg border border-slate-300 p-1.5 text-xs text-slate-800"
                     placeholder="Instructions"
                   />
-                  <button
+                  <StatusBadge status={fu.status} size="sm" />
+                  <button aria-label="Remove Follow Up"
                     type="button"
                     onClick={() => removeFollowUp(idx)}
                     className="text-slate-400 hover:text-rose-600 p-1 cursor-pointer"

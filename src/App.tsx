@@ -12,7 +12,7 @@ import { DischargeDocument, HospitalInfo } from './types/discharge';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
-  const [clinicianName, setClinicianName] = useState<string>('Dr. Sarah Jenkins, MD');
+  const [clinicianName, setClinicianName] = useState<string>('');
   const [documents, setDocuments] = useState<DischargeDocument[]>([]);
   const [activeDocument, setActiveDocument] = useState<DischargeDocument | null>(null);
 
@@ -23,8 +23,8 @@ export default function App() {
   } | null>(null);
 
   const [hospitalInfo, setHospitalInfo] = useState<HospitalInfo>({
-    name: 'Apollo General Hospital & Heart Center',
-    department: 'Department of Cardiology & Clinical Operations',
+    name: 'Local healthcare workspace',
+    department: '',
   });
 
   // Fetch documents from repository on load
@@ -46,6 +46,12 @@ export default function App() {
 
   useEffect(() => {
     fetchDocuments();
+    fetch('/api/settings').then(async res => {
+      if (!res.ok) throw new Error('Settings could not be loaded');
+      const settings = await res.json();
+      setHospitalInfo({ name: settings.hospitalName, department: settings.department });
+      setClinicianName(settings.clinicianInfo.name);
+    }).catch(() => alert('Could not load saved settings. Refresh before continuing.'));
   }, []);
 
   const handleDocumentCreated = (doc: DischargeDocument) => {

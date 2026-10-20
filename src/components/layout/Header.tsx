@@ -42,7 +42,7 @@ export const Header: React.FC<Props> = ({
       <div className="flex items-center gap-4">
         <div>
           <h2 className="font-serif italic text-2xl text-[#3E4234] tracking-tight">{getTabTitle()}</h2>
-          <p className="text-xs text-[#8C8476] font-medium flex items-center gap-1.5 mt-0.5">
+          <p className="text-xs text-[#665F54] font-medium flex items-center gap-1.5 mt-0.5">
             <HeartPulse className="h-3.5 w-3.5 text-[#5A5A40]" />
             <span>{hospitalName}</span>
           </p>
@@ -53,12 +53,12 @@ export const Header: React.FC<Props> = ({
           <div className="flex items-center gap-2 rounded-full border border-[#D9D1C5] bg-[#F5F5F0] px-3.5 py-1 text-xs text-[#3E4234] shadow-2xs">
             <User className="h-3.5 w-3.5 text-[#5A5A40]" />
             <span className="font-semibold">Patient: {activePatientName}</span>
-            <span className="text-[#8C8476] font-mono text-[11px]">({activePatientId})</span>
+            <span className="text-[#665F54] font-mono text-[11px]">({activePatientId})</span>
             {onClearPatientContext && (
               <button
                 onClick={onClearPatientContext}
                 title="Clear Patient Context (Ensures Patient Isolation)"
-                className="ml-1 rounded-full p-0.5 text-[#8C8476] hover:bg-[#D9D1C5] hover:text-[#3E4234] transition-colors cursor-pointer"
+                className="ml-1 rounded-full p-0.5 text-[#665F54] hover:bg-[#D9D1C5] hover:text-[#3E4234] transition-colors cursor-pointer"
               >
                 <X className="h-3.5 w-3.5" />
               </button>

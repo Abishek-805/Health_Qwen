@@ -35,6 +35,7 @@ export const CreateInstructionsPage: React.FC<Props> = ({
 }) => {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [maxReachedStep, setMaxReachedStep] = useState<number>(1);
+  const [hasUnsavedReportEdits, setHasUnsavedReportEdits] = useState(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const [extractedData, setExtractedData] = useState<StructuredDischargeInfo | null>(null);
@@ -50,7 +51,7 @@ export const CreateInstructionsPage: React.FC<Props> = ({
       setVerifiedData(initialDocument.verifiedData || null);
       setGeneratedReport(initialDocument.generatedReport || null);
       setAuditResult(initialDocument.auditResult || null);
-      if (initialDocument.extractedInfo) setExtractedData(initialDocument.extractedInfo);
+      setExtractedData(initialDocument.extractedInfo || initialDocument.verifiedData || null);
 
       if (initialDocument.approvalStatus === 'APPROVED') {
         setCurrentStep(6);
@@ -108,127 +109,49 @@ export const CreateInstructionsPage: React.FC<Props> = ({
 
   // Step 2 Handler: Clinical Verification Complete
   const handleVerifyComplete = (verified: AuthoritativeDischargeData) => {
+    setGeneratedReport(null); setAuditResult(null);
+    setMaxReachedStep(3);
     setVerifiedData(verified);
     setCurrentStep(3);
     setMaxReachedStep((prev) => Math.max(prev, 3));
   };
 
-  // Step 3 Handler: Generation Complete -> Run Audit Automatically!
+  // Save first; the server assigns the version and recomputes the audit.
   const handleGenerationComplete = async (report: GeneratedReport) => {
     if (!verifiedData) return;
-
-    setGeneratedReport(report);
     setIsLoading(true);
-
     try {
-      // Execute 18-Category Hybrid Audit
-      const resAudit = await fetch('/api/audit-instructions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          verifiedData,
-          report,
-        }),
+      const res = await fetch(document ? '/api/discharge-documents/' + document.id : '/api/discharge-documents', {
+        method: document ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json', ...(document ? { 'If-Match': String(document.currentVersion) } : {}) },
+        body: JSON.stringify({ verifiedData, generatedReport: report, hospitalInfo }),
       });
-
-      if (!resAudit.ok) {
-        throw new Error('Audit endpoint failed');
-      }
-
-      const audit: HybridAuditResult = await resAudit.json();
-      setAuditResult(audit);
-
-      // Persist Document
-      const newDoc: DischargeDocument = {
-        id: document?.id || `doc-${Date.now()}`,
-        patientId: verifiedData.patient.patientId.value,
-        extractedInfo: extractedData || undefined,
-        verifiedData,
-        generatedReport: report,
-        auditResult: audit,
-        approvalStatus: audit.overallStatus === 'CRITICAL_ISSUE' ? 'NEEDS_REVIEW' : 'AUDITED',
-        createdAt: document?.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        hospitalInfo,
-      };
-
-      const resDoc = await fetch('/api/discharge-documents', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newDoc),
-      });
-
-      const savedDoc = resDoc.ok ? await resDoc.json() : newDoc;
-      setDocument(savedDoc);
-      onDocumentCreated(savedDoc);
-
-      setCurrentStep(4);
-      setMaxReachedStep((prev) => Math.max(prev, 4));
-    } catch (err) {
-      console.error('Audit execution error:', err);
-      alert('Failed to execute hybrid safety audit.');
-    } finally {
-      setIsLoading(false);
-    }
+      if (!res.ok) throw new Error((await res.json()).error || 'Document save failed');
+      const saved: DischargeDocument = await res.json();
+      setDocument(saved); setGeneratedReport(saved.generatedReport!); setAuditResult(saved.auditResult!);
+      onDocumentCreated(saved); setCurrentStep(4); setMaxReachedStep(prev => Math.max(prev, 4));
+    } finally { setIsLoading(false); }
   };
 
-  // Step 5 Handler: Update Report & Save
-  const handleUpdateReport = async (
-    updatedReport: GeneratedReport,
-    reAuditResult?: HybridAuditResult
-  ) => {
-    setGeneratedReport(updatedReport);
-    if (reAuditResult) setAuditResult(reAuditResult);
-
-    if (document && verifiedData) {
-      const updatedDoc: DischargeDocument = {
-        ...document,
-        generatedReport: updatedReport,
-        auditResult: reAuditResult || document.auditResult,
-        approvalStatus: reAuditResult?.overallStatus === 'CRITICAL_ISSUE' ? 'NEEDS_REVIEW' : 'AUDITED',
-        updatedAt: new Date().toISOString(),
-      };
-
-      setDocument(updatedDoc);
-      onDocumentCreated(updatedDoc);
-
-      await fetch(`/api/discharge-documents/${updatedDoc.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedDoc),
-      });
-    }
+  const handleUpdateReport = async (updatedReport: GeneratedReport, _audit?: HybridAuditResult) => {
+    if (!document || !verifiedData) throw new Error('Save the document before editing.');
+    const res = await fetch('/api/discharge-documents/' + document.id, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json', 'If-Match': String(document.currentVersion) },
+      body: JSON.stringify({ verifiedData, generatedReport: updatedReport, hospitalInfo }),
+    });
+    if (!res.ok) throw new Error((await res.json()).error || 'Document save failed');
+    const saved: DischargeDocument = await res.json();
+    setDocument(saved); setGeneratedReport(saved.generatedReport!); setAuditResult(saved.auditResult!);
+    onDocumentCreated(saved);
   };
 
-  const effectiveDocument: DischargeDocument | null = document
-    ? {
-        ...document,
-        verifiedData: verifiedData || document.verifiedData,
-        generatedReport: generatedReport || document.generatedReport,
-        auditResult: auditResult || document.auditResult,
-        hospitalInfo: document.hospitalInfo || hospitalInfo,
-      }
-    : verifiedData && generatedReport && auditResult
-    ? {
-        id: `doc-${Date.now()}`,
-        patientId: verifiedData.patient.patientId.value,
-        extractedInfo: extractedData || undefined,
-        verifiedData,
-        generatedReport,
-        auditResult,
-        approvalStatus: auditResult.overallStatus === 'CRITICAL_ISSUE' ? 'NEEDS_REVIEW' : 'AUDITED',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        hospitalInfo,
-      }
-    : null;
+  const effectiveDocument = document;
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-between">
       <div>
         <StepIndicator
           currentStep={currentStep}
-          setStep={(s) => setCurrentStep(s)}
+          setStep={(s) => { if (hasUnsavedReportEdits && s !== currentStep) { alert('Save report edits before changing steps.'); return; } setCurrentStep(s); }}
           maxReachedStep={maxReachedStep}
         />
 
@@ -278,6 +201,7 @@ export const CreateInstructionsPage: React.FC<Props> = ({
 
           {currentStep === 5 && verifiedData && generatedReport && auditResult && (
             <Step5Review
+              onDirtyChange={setHasUnsavedReportEdits}
               verifiedData={verifiedData}
               report={generatedReport}
               auditResult={auditResult}

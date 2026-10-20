@@ -12,9 +12,9 @@ import {
   DischargeDocument,
 } from '../../src/types/discharge.js';
 import {
-  generateDischargePdfBufferSync,
+  generateApprovedDischargePdf,
   verifyPdfBinary,
-} from '../../src/utils/pdfGenerator.js';
+} from '../services/serverPdfGenerator.js';
 
 interface TestResultRow {
   num: number;
@@ -457,7 +457,7 @@ Medication: Paracetamol - Take as directed.`;
     const verifiedAfter = JSON.stringify(mockVerifiedData);
 
     const pass14 =
-      audit14.overallStatus === 'PASS' &&
+      audit14.overallStatus === 'REVIEW_REQUIRED' &&
       verifiedBefore === verifiedAfter &&
       correctedReport.version === 2;
 
@@ -516,7 +516,7 @@ Medication: Paracetamol - Take as directed.`;
       auditResult: audit14,
     };
 
-    const pdfRes = generateDischargePdfBufferSync(approvedDoc);
+    const pdfRes = generateApprovedDischargePdf(approvedDoc);
     const pdfBuf = Buffer.from(pdfRes.buffer);
 
     // Verify magic bytes: %PDF- (0x25, 0x50, 0x44, 0x46, 0x2D)

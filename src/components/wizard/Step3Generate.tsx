@@ -15,7 +15,7 @@ import {
 
 interface Props {
   verifiedData: AuthoritativeDischargeData;
-  onGenerationComplete: (report: GeneratedReport) => void;
+  onGenerationComplete: (report: GeneratedReport) => Promise<void>;
   isLoading: boolean;
   setIsLoading: (val: boolean) => void;
 }
@@ -27,7 +27,6 @@ export const Step3Generate: React.FC<Props> = ({
   setIsLoading,
 }) => {
   const language: SupportedLanguage = 'en';
-  const [promptNotes, setPromptNotes] = useState<string>('');
   const [generationStage, setGenerationStage] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string>('');
 
@@ -46,7 +45,6 @@ export const Step3Generate: React.FC<Props> = ({
         body: JSON.stringify({
           verifiedData,
           language: 'en',
-          additionalPromptNotes: promptNotes,
         }),
       });
 
@@ -57,7 +55,7 @@ export const Step3Generate: React.FC<Props> = ({
 
       const resData = await res.json();
       const report = (resData.report || resData) as GeneratedReport;
-      onGenerationComplete(report);
+      await onGenerationComplete(report);
     } catch (err: any) {
       console.error('Generation error:', err);
       setErrorMsg(err.message || 'Failed to generate discharge instructions.');
@@ -79,7 +77,7 @@ export const Step3Generate: React.FC<Props> = ({
               <h3 className="font-serif italic text-xl text-[#3E4234]">
                 Step 3 — AI Discharge Instructions
               </h3>
-              <p className="text-xs text-[#8C8476] mt-0.5">
+              <p className="text-xs text-[#665F54] mt-0.5">
                 Generate patient-friendly discharge instructions anchored strictly to the verified authoritative dataset.
               </p>
             </div>
@@ -91,11 +89,11 @@ export const Step3Generate: React.FC<Props> = ({
           <ShieldCheck className="h-5 w-5 text-[#5A5A40] shrink-0 mt-0.5" />
           <div className="text-xs leading-relaxed">
             <span className="font-extrabold text-[#3E4234] block mb-0.5">
-              GUARANTEED CLINICAL ANCHORING
+              CLINICIAN REVIEW REQUIRED
             </span>
             Generates clear, patient-facing discharge instructions for{' '}
             <strong>{verifiedData.patient.name.value}</strong> (ID:{' '}
-            {verifiedData.patient.patientId.value}). Numbers, dosages, and dates are preserved with zero hallucinated facts.
+            {verifiedData.patient.patientId.value}). Compare every instruction, dose, unit, and date with the verified source before approval.
           </div>
         </div>
 
@@ -115,20 +113,6 @@ export const Step3Generate: React.FC<Props> = ({
             </span>
           </div>
 
-          {/* Optional Prompts/Notes */}
-          <div>
-            <label className="text-xs font-bold text-[#3E4234] mb-2 block">
-              Optional Simplification or Style Directives
-            </label>
-            <input
-              type="text"
-              value={promptNotes}
-              onChange={(e) => setPromptNotes(e.target.value)}
-              placeholder="e.g., 'Use bullet points, emphasize wound care, elderly patient instructions'"
-              className="w-full rounded-2xl border border-[#D9D1C5] p-3.5 text-xs text-[#3E4234] focus:border-[#5A5A40] focus:bg-white focus:outline-none bg-[#F5F5F0]/50 transition-all"
-            />
-          </div>
-
           {/* Action Button */}
           {isLoading ? (
             <div className="rounded-2xl bg-[#5A5A40]/10 p-5 text-center border border-[#5A5A40]/20">
@@ -136,7 +120,7 @@ export const Step3Generate: React.FC<Props> = ({
                 <RefreshCw className="h-5 w-5 text-[#5A5A40] animate-spin" />
                 <span className="text-xs font-bold text-[#3E4234]">{generationStage}</span>
               </div>
-              <p className="text-[11px] text-[#8C8476]">
+              <p className="text-[11px] text-[#665F54]">
                 Composing all 8 structured sections in English...
               </p>
             </div>

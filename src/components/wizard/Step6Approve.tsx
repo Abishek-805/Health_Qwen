@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   CheckCircle2,
   Download,
@@ -27,7 +27,8 @@ export const Step6Approve: React.FC<Props> = ({
   onApprovalSuccess,
   clinicianName,
 }) => {
-  const [role, setRole] = useState<string>('Attending Physician');
+  const role = 'Clinician';
+  const [reviewConfirmed, setReviewConfirmed] = useState(false);
   const [signatureNote, setSignatureNote] = useState<string>(
     'Reviewed discharge summary, verified medication dosages, and confirmed patient understanding.'
   );
@@ -38,13 +39,14 @@ export const Step6Approve: React.FC<Props> = ({
   const [downloadedFilename, setDownloadedFilename] = useState<string>('');
   const [downloadError, setDownloadError] = useState<string>('');
 
+  useEffect(() => { setIsApproved(doc.approvalStatus === 'APPROVED'); setReviewConfirmed(false); }, [doc.id, doc.currentVersion, doc.approvalStatus]);
   const audit = doc.auditResult;
   const isCritical = audit?.overallStatus === 'CRITICAL_ISSUE';
 
   // ── Approval ─────────────────────────────────────────────────
   const handleApprove = async () => {
-    if (isCritical) {
-      alert('Approval is strictly blocked due to CRITICAL_ISSUE in hybrid safety audit.');
+    if (isCritical || !reviewConfirmed) {
+      alert('Review all instructions and confirm the review checkbox. Critical findings must be resolved.');
       return;
     }
 
@@ -55,8 +57,8 @@ export const Step6Approve: React.FC<Props> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           documentId: doc.id,
-          reviewerName: clinicianName,
-          reviewerRole: role,
+          reportVersion: doc.currentVersion,
+          clinicianReviewConfirmed: reviewConfirmed,
           signatureNote,
         }),
       });
@@ -106,7 +108,7 @@ export const Step6Approve: React.FC<Props> = ({
       const pre = await fetch('/api/precheck-approved-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(doc),
+        body: JSON.stringify({ documentId: doc.id }),
       });
 
       if (!pre.ok) {
@@ -132,8 +134,8 @@ export const Step6Approve: React.FC<Props> = ({
 
       const input = document.createElement('input');
       input.type = 'hidden';
-      input.name = 'payload';
-      input.value = JSON.stringify(doc);
+      input.name = 'documentId';
+      input.value = doc.id;
       form.appendChild(input);
 
       document.body.appendChild(form);
@@ -169,7 +171,7 @@ export const Step6Approve: React.FC<Props> = ({
               <h3 className="font-serif italic text-xl text-[#3E4234] tracking-tight">
                 Step 6 — Clinical Sign-Off &amp; PDF Handout Export
               </h3>
-              <p className="text-xs text-[#8C8476] mt-0.5">
+              <p className="text-xs text-[#665F54] mt-0.5">
                 Final clinician approval stamp for patient discharge handout (v{doc.generatedReport?.version}).
               </p>
             </div>
@@ -199,11 +201,10 @@ export const Step6Approve: React.FC<Props> = ({
             <ShieldCheck className="h-6 w-6 text-[#5A5A40] shrink-0 mt-0.5" />
             <div>
               <h4 className="text-sm font-extrabold text-[#3E4234]">
-                SAFETY CHECKS CLEAR — READY FOR CLINICIAN APPROVAL
+                CLINICIAN REVIEW REQUIRED BEFORE APPROVAL
               </h4>
-              <p className="text-xs mt-0.5 leading-relaxed text-[#8C8476]">
-                Report version v{doc.generatedReport?.version} has passed all safety checks. Click below to digitally
-                attest and download the A4 PDF handout.
+              <p className="text-xs mt-0.5 leading-relaxed text-[#665F54]">
+                Report version v{doc.generatedReport?.version} has automated findings to review. Check all findings and unevaluated categories against the original source before approving.
               </p>
             </div>
           </div>
@@ -212,25 +213,25 @@ export const Step6Approve: React.FC<Props> = ({
         {/* Patient Summary */}
         <div className="mb-6 rounded-2xl border border-[#D9D1C5] bg-[#F5F5F0]/50 p-5 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
           <div>
-            <span className="text-[#8C8476] font-bold block text-[10px] uppercase">Patient Name</span>
+            <span className="text-[#665F54] font-bold block text-[10px] uppercase">Patient Name</span>
             <span className="font-extrabold text-[#3E4234] text-sm">
               {doc.verifiedData?.patient?.name?.value ?? '—'}
             </span>
           </div>
           <div>
-            <span className="text-[#8C8476] font-bold block text-[10px] uppercase">Patient ID</span>
+            <span className="text-[#665F54] font-bold block text-[10px] uppercase">Patient ID</span>
             <span className="font-bold font-mono text-[#5A5A40]">
               {doc.verifiedData?.patient?.patientId?.value ?? '—'}
             </span>
           </div>
           <div>
-            <span className="text-[#8C8476] font-bold block text-[10px] uppercase">Language</span>
+            <span className="text-[#665F54] font-bold block text-[10px] uppercase">Language</span>
             <span className="font-bold text-[#3E4234] uppercase">
               {doc.generatedReport?.language ?? '—'}
             </span>
           </div>
           <div>
-            <span className="text-[#8C8476] font-bold block text-[10px] uppercase">Document Version</span>
+            <span className="text-[#665F54] font-bold block text-[10px] uppercase">Document Version</span>
             <span className="font-bold text-[#5A5A40]">v{doc.generatedReport?.version ?? '—'}</span>
           </div>
         </div>
@@ -243,20 +244,22 @@ export const Step6Approve: React.FC<Props> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-bold text-[#3E4234] block mb-1">Clinician Name</label>
+              <label className="text-xs font-bold text-[#3E4234] block mb-1" htmlFor="approval-name">Clinician Name</label>
               <input
                 type="text"
+                id="approval-name"
                 value={clinicianName}
                 disabled
                 className="w-full rounded-2xl border border-[#D9D1C5] p-3 text-xs font-bold text-[#3E4234] bg-[#F5F5F0] cursor-not-allowed"
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-[#3E4234] block mb-1">Clinical Role / Title</label>
+              <label className="text-xs font-bold text-[#3E4234] block mb-1" htmlFor="approval-role">Clinical Role / Title</label>
               <input
                 type="text"
+                id="approval-role"
                 value={role}
-                onChange={(e) => setRole(e.target.value)}
+                readOnly
                 className="w-full rounded-2xl border border-[#D9D1C5] p-3 text-xs font-medium text-[#3E4234] focus:border-[#5A5A40] focus:bg-white focus:outline-none bg-[#F5F5F0]/50 transition-all"
                 placeholder="Attending Physician / Chief Resident"
               />
@@ -264,9 +267,11 @@ export const Step6Approve: React.FC<Props> = ({
           </div>
 
           <div>
-            <label className="text-xs font-bold text-[#3E4234] block mb-1">Approval Signature Note</label>
+            <label className="mb-4 flex items-center gap-2 text-xs"><input type="checkbox" checked={reviewConfirmed} onChange={e => setReviewConfirmed(e.target.checked)} />I reviewed the source, all instructions, unresolved findings, and the limits of automated checks.</label>
+            <label className="text-xs font-bold text-[#3E4234] block mb-1" htmlFor="approval-note">Approval Signature Note</label>
             <input
               type="text"
+              id="approval-note"
               value={signatureNote}
               onChange={(e) => setSignatureNote(e.target.value)}
               className="w-full rounded-2xl border border-[#D9D1C5] p-3 text-xs text-[#3E4234] focus:border-[#5A5A40] focus:bg-white focus:outline-none bg-[#F5F5F0]/50 transition-all"
@@ -301,7 +306,7 @@ export const Step6Approve: React.FC<Props> = ({
               type="button"
               id="step6-approve-btn"
               onClick={handleApprove}
-              disabled={isCritical || isApproving}
+              disabled={isCritical || isApproving || !reviewConfirmed}
               className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-2xl bg-[#5A5A40] px-8 py-3.5 text-xs font-bold text-white shadow-xs hover:bg-[#4A4A34] active:scale-95 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed uppercase tracking-wider"
             >
               <CheckCircle2 className="h-4 w-4" />

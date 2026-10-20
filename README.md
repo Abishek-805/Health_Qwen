@@ -1,137 +1,133 @@
 # Healthcare Discharge Instructions Generator
 
-Local Qwen extraction, clinician verification, English discharge handouts, rule-based safety checks, and server-generated PDF downloads. React 19 + TypeScript + Vite + Express + node-llama-cpp.
+A local, single-clinician workspace for Qwen extraction, source verification, English discharge instructions, explicit audit findings, and approved PDF downloads. React + Vite + Express + TypeScript, with SQLite persistence.
 
-This is a prototype. Records and settings are held in memory and disappear when the server stops or restarts. The API has no authentication, and approval metadata can be supplied by clients. Use synthetic data in an isolated development environment. See the [full audit](docs/AUDIT_REPORT.md) for unresolved findings.
+The server binds to **127.0.0.1 only**, requires authentication, and rejects foreign hosts and origins. This is a desktop workflow; LAN hosting, reverse proxies, multi-user roles, and clinical certification are outside its supported scope. Automated checks cannot establish clinical safety. A clinician must compare the original source with every instruction before approving.
 
-## Quick start on Windows
+## Windows quick start
 
-Install Node.js 22.3+ (Node 24.19.0 was tested), npm, and Git. Local inference uses CPU or a supported GPU; native build tools may be needed if a compatible node-llama-cpp binary is unavailable.
+Install Node.js **24.x**, npm, and Git:
 
 ```powershell
 git clone https://github.com/Abishek-805/Health_Qwen.git
 cd Health_Qwen
+$env:NODE_LLAMA_CPP_POSTINSTALL = 'skip'
 npm ci
 Copy-Item .env.example .env
 npm run download-model
 .\start.bat
 ```
 
-Open [localhost:3000](http://localhost:3000), or the port configured in `.env`.
+Open [localhost:3000](http://localhost:3000). The browser asks for a username and password. On first startup the app generates a strong password and saves the login in **`.runtime/login.txt`**; only its salted scrypt hash is used by the server. These files are ignored by Git. Keep them private. Alternatively, configure both `APP_USERNAME` and `APP_PASSWORD` (at least 16 characters) in `.env`. The authenticated username is the recorded reviewer identity; the UI cannot impersonate a different clinician.
 
-- Double-click `start.bat` to launch the combined frontend/API in the background. It creates `.env` from the example only if missing; it does not install dependencies or download models.
-- Double-click `stop.bat` to stop the process tree launched by this checkout. **Stopping clears all in-memory records.** Download needed PDFs first.
-- Logs and process identity live in ignored `.runtime/`. Duplicate starts are ignored. Stale process IDs are checked against their creation time before stopping anything.
-- Startup checks that the process survives three seconds; inspect logs and `/api/health` to confirm readiness. The script prints the default URL; custom ports are read by the server from `.env`.
-- The launcher uses `tsx server.ts` without backend watch mode to avoid resetting records on source edits. Stop and start after backend changes. Manually launched servers must be stopped in their own terminal.
+`NODE_LLAMA_CPP_POSTINSTALL=skip` skips the install-time native probe. Native backend selection and the pinned model are exercised by `npm run test:model`; compatible prebuilt bindings or native build tools are still required for inference. Do not treat successful package installation as proof of hardware readiness.
 
-For terminal development on Windows, macOS, or Linux, run `npm run dev` from the repository root. This uses backend watch mode, so backend edits can reset data.
+- `start.bat` runs the combined frontend/API in the background, without backend watch reloads. It creates `.env` only when absent and reports log locations.
+- `stop.bat` stops only this checkout's recorded process tree. **Saved documents, settings, and approval history survive restarts.** Unsaved browser edits do not.
+- Runtime logs/process state are in `.runtime/`; clinical data is in `data/discharge.sqlite`. Both directories are ignored by Git and Vite watching.
+- The launcher checks port availability and waits for HTTP readiness, using the configured port. `/api/health` checks HTTP readiness; `/api/extraction-status` distinguishes missing, unloaded, and ready models.
+- `npm run dev` starts the foreground development watcher. Backend changes restart the server; Vite changes can discard unsaved browser edits.
 
-## Actual processing flow
+## Workflow and safeguards
 
-1. Upload PDF, JPG, PNG, or paste clinical text.
-2. Digital PDF parsing or local Tesseract OCR extracts source text. The service also automatically attempts Python PaddleOCR for images and chooses the better result; missing PaddleOCR falls back to Tesseract. Python is optional, and its absence may print a traceback.
-3. Local Qwen2.5-1.5B GGUF extraction structures the clinical data; source evidence checks downgrade unsupported values. **There is no cloud fallback when the local model is missing.**
-4. A clinician verifies extracted data. English instructions use deterministic local templates.
-5. Rule-based checks produce an audit across 18 named categories. Optional Gemini semantic checks can supplement them.
-6. The review/approval UI and Express PDF endpoint create an attachment. Current gates check metadata, version, and critical status, but do not establish trusted clinician identity or protect against forged client payloads.
+1. Upload a PDF, PNG, JPEG, or paste text. Upload signatures and content types must agree. Limits: 15 MB/file, 20 PDF pages, 32,000 characters pasted text, and **12,000 extracted characters** for the local model, plus a tokenizer-checked context budget. Larger notes must be split; the app does not silently truncate them.
+2. Digital PDF text or local Tesseract OCR feeds the pinned Qwen GGUF model. Python/PaddleOCR and its temporary clinical-image files were removed. OCR recognition has a timeout; inference is single-flight with a cancellation deadline. First-use OCR/native assets may require network access.
+3. Evidence validation requires the extracted value to agree with its quoted source. `UNCLEAR` fields must be corrected or removed before source confirmation. Every care category can be reviewed and edited.
+4. English generation uses local templates, including patient ID and known allergies. There is no cloud extraction fallback.
+5. Saving a draft or edit makes the server assign its version and recompute the audit. Edits clear prior approval; version checks reject stale saves from another tab. Untested categories display **NOT EVALUATED**, not a pass. Rule checks cover specific patterns; clinical meaning still requires human review.
+6. Approval requires the signed-in clinician's explicit review acknowledgment. Critical findings or an unavailable requested cloud audit block approval. PDFs are generated only from a **saved approved document ID**; client-supplied audits, approval metadata, and PDF document payloads are rejected.
 
-The UI currently generates English instructions. Existing Hindi/Tamil cloud paths do not establish validated multilingual support. Local extraction and default English generation/auditing need no Gemini key; section regeneration and the Gemini status endpoint can contact Google if a key is configured. OCR assets may need network access on first use.
+The database stores verified source fields and saved report versions; original uploaded files are not retained. Keep the original clinical source available for review. Historical events are append-only through the application and database triggers. Protect the database and backups with OS access controls and disk encryption; SQLite storage is not application-encrypted.
 
 ## Configuration
 
-Copy `.env.example` once; keep real keys out of Git. Existing `.env` files are preserved by the launcher.
+Existing `.env` files are preserved. Never commit credentials or clinical data.
 
-| Variable | Behavior |
+| Variable | Purpose |
 | --- | --- |
 | `PORT` | Shared HTTP port, default `3000` |
-| `NODE_ENV` | `development` uses Vite middleware; `production` serves built assets |
-| `GEMINI_API_KEY` / `GEMINI_API_KEY_BACKUP` | Optional cloud credentials; backup support varies by operation |
-| `GEMINI_MODEL` | Cloud model identifier; code defaults to `gemini-3.6-flash`, whose availability was not verified |
-| `GEMINI_GENERATION_ENABLED` | Default false; enables existing non-English cloud generation paths. English still uses templates |
-| `GEMINI_AUDIT_ENABLED` | Default false; enables optional cloud semantic auditing |
-| `DISABLE_HMR` | `true` disables frontend HMR/watch behavior |
+| `NODE_ENV` | `development` for Vite middleware; `production` for built frontend assets |
+| `DATA_PATH` | SQLite path, default `data/discharge.sqlite`; use an absolute path when overriding |
+| `APP_USERNAME`, `APP_PASSWORD` | Optional configured account; otherwise use the generated `.runtime/login.txt` account |
+| `CLOUD_PROCESSING_ENABLED` | Default false; required for any Gemini client to be created |
+| `GEMINI_MODEL` | Explicit, available model identifier required for cloud operations; no assumed model default |
+| `GEMINI_API_KEY`, `GEMINI_API_KEY_BACKUP` | Optional cloud credentials |
+| `GEMINI_AUDIT_ENABLED` | Default false; enables supplemental cloud findings when cloud processing is also enabled |
+| `GEMINI_GENERATION_ENABLED` | Default false; enables optional cloud section rewriting, alongside the cloud opt-in |
+| `DISABLE_HMR` | `true` disables frontend HMR/watching |
 
-`APP_URL` is not consumed by the current code. Cloud operations send supplied clinical content to Google. Review the service configuration before using any sensitive content.
+Cloud section rewriting sends verified clinical data and section text to Google. Optional semantic audits also send the report. Setting a key alone does not enable cloud processing. A requested cloud audit that fails, times out, or returns invalid findings is marked unavailable and blocks approval. English initial generation remains local.
 
-The model downloader stores `models/qwen2.5-1.5b/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf` (about 1.12 GB). This directory is ignored. Missing model errors are resolved with `npm run download-model`. The downloader currently checks file size rather than a cryptographic checksum.
+Only English reports are supported. Historical language filters or archived artifacts do not establish multilingual support. The old `APP_URL` setting is not used.
 
-## Commands and verification
+## Models
 
 ```powershell
-npm run lint           # TypeScript checking (not a style linter)
-npm test               # Seven top-level tests, including OCR and real local-model inference
-npm run build          # Frontend assets + ESM server in dist/server.js
-npx tsx server/tests/test-server-pdf-endpoint.ts
-npx tsx server/tests/test-step6-architecture.ts
-npx tsx server/tests/test-ui-integration-flow.ts
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/test-lifecycle.ps1
+npm run download-model
 ```
 
-`npm test` needs the model and OCR runtime and may be slow. It does not run every standalone test. The lifecycle check uses port 3301 and requires the managed app to be stopped. Archived manual diagnostics under `scripts/diagnostics/` are opt-in: some seed documents into a live server or write PDFs to the user's Downloads folder.
+The downloader pins the official Qwen model revision and verifies SHA-256, streams to a unique temporary file, and atomically publishes verified weights. It preserves existing weights if a replacement fails. Model initialization also verifies the checksum. Weights are stored in `models/qwen2.5-1.5b/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf` (1,117,320,736 bytes), outside Git. CPU, Vulkan, CUDA, or Metal reporting reflects the actual selected backend.
 
-For production-mode smoke testing:
+## Backups and recovery
+
+```powershell
+npm run backup -- C:\PrivateBackups\discharge-2026-10-20.sqlite
+npm run restore -- C:\PrivateBackups\discharge-2026-10-20.sqlite C:\PrivateBackups\restored.sqlite
+```
+
+Backup uses a consistent SQLite snapshot. Restore checks integrity and schema presence, refuses active WAL databases, and **never overwrites an existing file**. To use the restored copy, stop the app, set `DATA_PATH` to its absolute path in `.env`, then restart. Keep the original database until recovery is verified. Backups include clinical records and approval history; secure them and define an appropriate retention policy. No automatic deletion or retention purge runs.
+
+## Checks
+
+```powershell
+npm run lint              # TypeScript validation
+npm test                  # Authentication, trust boundaries, persistence/recovery, dose/evidence, PDF HTTP/content, architecture
+npm run test:model        # Eight model/OCR/extraction/audit/budget tests; requires downloaded weights and native runtime
+npm run test:integration  # Eighteen service-level acceptance criteria; requires model/OCR
+npm run test:windows      # Windows batch lifecycle checks, uses port 3301
+npm run build
+npm audit
+```
+
+`.github/workflows/ci.yml` runs clean installation, TypeScript checks, deterministic/security/PDF tests, build, and dependency audit on Node 24. Hardware/model benchmarks are explicit local checks. The audit report distinguishes executed checks from unverified clinical and platform claims.
+
+For production-mode local execution:
 
 ```powershell
 npm run build
-$env:NODE_ENV = 'production'
 npm start
 ```
 
-On macOS/Linux use `NODE_ENV=production npm start`. Run from the project root. A production build is not a security or clinical-readiness certification. There is currently no Dockerfile, deployment pipeline, or persistent database.
+Build and start explicitly select production mode, including when the shell or `.env` selected development. On macOS/Linux use the same commands. Run commands from the repository root. There is no Dockerfile or public deployment configuration.
 
-## API map
+## API
+
+All API routes except `/api/health` require the same HTTP Basic credentials as the app. Writes require the local origin; there is no CORS grant. Requests are rate limited. Do not send credentials over a network by changing the bind address.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| GET | `/api/health` | Process health; does not verify model readiness |
-| GET | `/api/extraction-status` | Local model/device status |
-| GET | `/api/ai-status` | Optional Gemini connectivity call |
-| GET / PUT | `/api/settings` | In-memory settings |
-| GET | `/api/patients` | In-memory patient index |
+| GET | `/api/health`, `/api/session` | HTTP health (public), authenticated identity |
+| GET | `/api/extraction-status`, `/api/ai-status` | Actual local status, optional cloud connectivity |
+| GET / PUT | `/api/settings` | Persisted hospital name/department; identity is server-owned |
+| GET | `/api/patients` | Patient index derived from saved documents |
 | POST | `/api/extract-discharge` | Multipart `file` or `textInput` |
-| POST | `/api/generate-instructions` | `verifiedData`, optional language/version/document ID |
-| POST | `/api/audit-instructions`, `/api/validate-instructions` | `verifiedData`, `report`, optional document ID |
-| POST | `/api/regenerate-section` | Cloud section regeneration |
-| GET / POST | `/api/discharge-documents` | List/create documents; `/api/documents` is an alias |
-| GET / PUT | `/api/discharge-documents/:id` | Read/update document; `/api/documents/:id` is an alias |
-| POST | `/api/approve-instructions`, `/api/approve-document` | Reviewer metadata and document ID |
-| POST | `/api/precheck-approved-pdf` | JSON validation before download |
-| POST | `/api/generate-approved-pdf` | PDF attachment; JSON, form `payload`, or document ID |
+| POST | `/api/generate-instructions` | Confirmed `verifiedData`; English template generation |
+| POST | `/api/audit-instructions`, `/api/validate-instructions` | Non-persistent audit of verified data and report |
+| POST | `/api/regenerate-section` | Explicitly enabled cloud rewrite; otherwise edit manually |
+| GET / POST | `/api/discharge-documents` | List/create; writes accept only `verifiedData`, `generatedReport`, `hospitalInfo` |
+| GET / PUT | `/api/discharge-documents/:id` | Read/edit a saved record; PUT requires `If-Match` with the current version; `/api/documents` aliases remain |
+| POST | `/api/approve-instructions`, `/api/approve-document` | `documentId`, current numeric `reportVersion`, `clinicianReviewConfirmed: true`, optional `signatureNote` |
+| POST | `/api/precheck-approved-pdf`, `/api/generate-approved-pdf` | Saved `documentId` only; precheck JSON, download PDF attachment |
 
-## Repository layout
+## Files and troubleshooting
 
-```text
-start.bat / stop.bat       Windows launch controls
-scripts/app.ps1           Shared lifecycle implementation
-scripts/test-lifecycle.ps1 Windows lifecycle regression checks
-scripts/diagnostics/       Archived manual PDF/server diagnostics
-src/                      React UI, shared types, browser utilities
-server.ts                 Express + Vite/static server entry
-server/ai/                Optional Gemini operations and local templates
-server/audit/             Deterministic and semantic checks
-server/repositories/      In-memory stores
-server/routes/            API routes
-server/services/          OCR, extraction, validation, PDF rendering
-server/scripts/           Model downloader
-server/tests/             Tests, benchmarks, synthetic fixtures
-docs/AUDIT_REPORT.md      Current audit and remediation priorities
-docs/dependency-audit.json Raw npm audit snapshot
-docs/CLEANUP_MANIFEST.md  Historical cleanup record (not a current guarantee)
-docs/screenshots/         Historical UI screenshots
-models/                   Ignored local model weights
-.runtime/                 Ignored process identity and logs
-dist/                     Ignored generated build output
-eng.traineddata           Existing local English OCR data
-```
+`src/` contains the UI/shared types; `server/` contains routes, validation, authentication, SQLite, extraction, audit, and PDF services; `scripts/` contains Windows lifecycle tools. `docs/AUDIT_REPORT.md` is the current audit, `docs/dependency-audit.json` is the dependency snapshot, and `docs/screenshots/` contains verification images. Historical cleanup notes are explicitly archived.
 
-npm and `package-lock.json` are the canonical dependency workflow; the obsolete Bun lockfile was removed. Root Vite/TypeScript/HTML entry files stay in their conventional locations.
+- Read `.runtime/stderr.log` and `.runtime/stdout.log` for startup failures. Logs omit extracted clinical text.
+- Missing model/checksum mismatch: run `npm run download-model`.
+- Port in use: choose another `PORT` or stop the owning checkout. The stop script never kills an arbitrary port owner.
+- Authentication failures: use `.runtime/login.txt`, or set both account variables consistently. Browsers may cache Basic authentication until the browser session ends.
+- Extraction busy/too long: finish the current request or split the source; do not retry in parallel.
+- SQLite errors: preserve the database and WAL files, stop the app, and recover from a verified backup. Never delete the database to repair a startup error.
 
-## Troubleshooting
-
-- Missing `tsx`: run `npm ci` from the root.
-- Missing GGUF: run `npm run download-model`; the page can load without it, extraction cannot.
-- Port in use: stop this checkout with `stop.bat`, or choose another `PORT`. The stop script never kills an arbitrary port owner.
-- Startup failure: read `.runtime/stderr.log` and `.runtime/stdout.log`. The server listens on all IPv4 interfaces (`0.0.0.0`), so isolate it with host/network controls.
-- Records disappeared: restarts, crashes, and watch-mode reloads clear the repository; there is no database recovery.
-- Production ESM error from `server.cjs`: rebuild and use the updated `npm start` (`dist/server.js`).
+See the [full remediation and verification report](docs/AUDIT_REPORT.md) for remaining limits.

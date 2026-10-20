@@ -19,3 +19,8 @@ venv/
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# Local clinical database and backups
+data/
+*.sqlite*
+*.backup

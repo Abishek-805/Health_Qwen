@@ -26,7 +26,7 @@ interface Props {
   auditResult: HybridAuditResult;
   verifiedData?: AuthoritativeDischargeData;
   report?: GeneratedReport;
-  onUpdateReport?: (updatedReport: GeneratedReport, reAuditResult?: HybridAuditResult) => void;
+  onUpdateReport?: (updatedReport: GeneratedReport, reAuditResult?: HybridAuditResult) => Promise<void>;
   onProceedToReview: () => void;
   onProceedToApproval?: () => void;
 }
@@ -180,7 +180,7 @@ export const Step4Audit: React.FC<Props> = ({
 
       const reAuditResult = (await res.json()) as HybridAuditResult;
       // Update report & audit result in parent state, close modal, STAY ON STEP 4
-      onUpdateReport(updatedReport, reAuditResult);
+      await onUpdateReport(updatedReport, reAuditResult);
       setSelectedFinding(null);
     } catch (err: any) {
       console.error('Apply fix error:', err);
@@ -230,13 +230,14 @@ export const Step4Audit: React.FC<Props> = ({
                 {isCritical
                   ? 'CRITICAL SAFETY ISSUE DETECTED — APPROVAL BLOCKED'
                   : isReviewReq
-                  ? 'AUDIT PASSED WITH REVIEW WARNINGS'
-                  : 'SAFE — 18-CATEGORY CLINICAL AUDIT PASSED'}
+                  ? 'CLINICIAN REVIEW REQUIRED'
+                  : 'NO ISSUES DETECTED BY CHECKS RUN'}
               </h3>
             </div>
           </div>
 
           <div className="flex flex-col items-end gap-1">
+            <p className="text-xs text-[#3E4234]">{auditResult.coverageNote}</p>
             <StatusBadge status={auditResult?.overallStatus || 'PASS'} size="lg" />
             <div className="text-[11px] font-bold text-slate-600 mt-1">
               REC: <StatusBadge status={auditResult?.approvalRecommendation || auditResult?.recommendation || 'READY_FOR_HUMAN_APPROVAL'} size="sm" />
@@ -251,7 +252,7 @@ export const Step4Audit: React.FC<Props> = ({
         {/* Counts summary pill */}
         <div className="mt-4 flex flex-wrap items-center gap-3 text-xs font-semibold">
           <div className="rounded-lg bg-white/80 px-3 py-1.5 border border-slate-200">
-            Total Checked Categories: <span className="font-bold">18 / 18</span>
+            Categories with checks: <span className="font-bold">{Object.keys(CATEGORY_NAMES).filter(key => auditResult.categorySummaries[key]?.status !== 'NOT_EVALUATED').length} / 18</span>
           </div>
           <div className="rounded-lg bg-rose-100/80 text-rose-900 px-3 py-1.5 border border-rose-200">
             Critical Findings: <span className="font-extrabold">{criticalCount}</span>
@@ -275,7 +276,7 @@ export const Step4Audit: React.FC<Props> = ({
           <span className="flex items-center gap-2">
             <ShieldAlert className="h-4 w-4 text-[#5A5A40]" /> 18-CATEGORY AUDIT MATRIX BREAKDOWN
           </span>
-          <span className="text-[11px] text-[#8C8476] font-normal">Click any category finding to inspect evidence & apply quick fix</span>
+          <span className="text-[11px] text-[#665F54] font-normal">Click any category finding to inspect evidence & apply quick fix</span>
         </h4>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -294,6 +295,9 @@ export const Step4Audit: React.FC<Props> = ({
             return (
               <div
                 key={catKey}
+                role={catFindings.length ? 'button' : undefined}
+                tabIndex={catFindings.length ? 0 : undefined}
+                onKeyDown={event => { if (catFindings.length && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); setSelectedFinding(catFindings[0]); } }}
                 onClick={() => catFindings.length > 0 && setSelectedFinding(catFindings[0])}
                 className={`rounded-2xl border p-4 transition-all ${
                   catFindings.length > 0 ? 'cursor-pointer hover:shadow-xs hover:border-[#5A5A40]' : ''
@@ -318,7 +322,7 @@ export const Step4Audit: React.FC<Props> = ({
                   </div>
                 ) : (
                   <div className="text-[11px] text-[#5A5A40] flex items-center gap-1 mt-1 font-semibold">
-                    <CheckCircle2 className="h-3 w-3 text-[#5A5A40]" /> Verified safe
+                    {catStatus === 'NOT_EVALUATED' ? 'Clinician review required' : 'No finding detected'}
                   </div>
                 )}
               </div>
@@ -340,7 +344,7 @@ export const Step4Audit: React.FC<Props> = ({
               <button
                 onClick={() => !isApplyingFix && setSelectedFinding(null)}
                 disabled={isApplyingFix}
-                className="rounded-full p-1 text-[#8C8476] hover:bg-[#F5F5F0] hover:text-[#3E4234] cursor-pointer disabled:opacity-30"
+                className="rounded-full p-1 text-[#665F54] hover:bg-[#F5F5F0] hover:text-[#3E4234] cursor-pointer disabled:opacity-30"
               >
                 ✕
               </button>
@@ -349,8 +353,8 @@ export const Step4Audit: React.FC<Props> = ({
             {/* Badges */}
             <div className="flex items-center gap-2 mb-4">
               <StatusBadge status={selectedFinding.status} />
-              <span className="text-xs font-bold text-[#8C8476]">Category: {selectedFinding.categoryName}</span>
-              <span className="text-xs text-[#8C8476]">•</span>
+              <span className="text-xs font-bold text-[#665F54]">Category: {selectedFinding.categoryName}</span>
+              <span className="text-xs text-[#665F54]">•</span>
               <span className="text-[11px] font-semibold text-[#5A5A40] flex items-center gap-1">
                 {selectedFinding.isDeterministic ? '⚡ Deterministic Rule' : <><Sparkles className="h-3 w-3" /> Semantic AI Check</>}
               </span>
@@ -359,7 +363,7 @@ export const Step4Audit: React.FC<Props> = ({
             {/* Side-by-Side Data Panels */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div className="rounded-2xl border border-[#D9D1C5] bg-[#F5F5F0] p-3.5">
-                <div className="text-[10px] font-extrabold uppercase tracking-wider text-[#8C8476] mb-1">
+                <div className="text-[10px] font-extrabold uppercase tracking-wider text-[#665F54] mb-1">
                   Verified Source Data
                 </div>
                 <div className="text-xs font-bold text-[#3E4234] whitespace-pre-wrap font-mono bg-white p-3 rounded-xl border border-[#D9D1C5]">
@@ -419,7 +423,7 @@ export const Step4Audit: React.FC<Props> = ({
                   type="button"
                   disabled={isApplyingFix}
                   onClick={() => setSelectedFinding(null)}
-                  className="text-[#8C8476] font-semibold hover:text-[#3E4234] cursor-pointer hover:underline"
+                  className="text-[#665F54] font-semibold hover:text-[#3E4234] cursor-pointer hover:underline"
                 >
                   Close Finding
                 </button>

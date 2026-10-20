@@ -1,3 +1,5 @@
+import assert from 'node:assert/strict';
+import { extractClinicalDataLocal } from '../services/localClinicalExtractionService';
 import { executeHybridAudit } from '../audit/hybridAudit.js';
 import { extractDocumentSource } from '../services/documentSourceService.js';
 import { validateSourceEvidence } from '../services/sourceEvidenceValidator.js';
@@ -188,11 +190,11 @@ async function runTestSuite() {
   const verified1 = createMockVerifiedData();
   const report1 = createBaseReport();
   const res1 = await executeHybridAudit(verified1, report1);
-  if (res1.overallStatus === 'PASS') {
-    console.log('✅ TEST 4 PASSED: Clean report correctly returned PASS.');
+  if (res1.overallStatus === 'REVIEW_REQUIRED' && res1.categorySummaries.WORDING.status === 'NOT_EVALUATED') {
+    console.log('✅ TEST 4 PASSED: Clean report requires review of unevaluated categories.');
     passedTests++;
   } else {
-    console.error('❌ TEST 4 FAILED: Expected PASS but got:', res1.overallStatus);
+    console.error('❌ TEST 4 FAILED: Expected REVIEW_REQUIRED but got:', res1.overallStatus);
   }
 
   // TEST 5: Hybrid Safety Audit - Patient ID mismatch
@@ -230,6 +232,11 @@ async function runTestSuite() {
   }
 
   console.log('====================================================');
+  totalTests++;
+  try {
+    await assert.rejects(() => extractClinicalDataLocal('Z '.repeat(6000)), /token budget/);
+    passedTests++; console.log('TEST 8 PASSED: Oversized token input is rejected before inference.');
+  } catch (error) { console.error('TEST 8 FAILED:', error); }
   console.log(`TEST RESULTS SUMMARY: ${passedTests}/${totalTests} TESTS PASSED.`);
   console.log('====================================================');
 

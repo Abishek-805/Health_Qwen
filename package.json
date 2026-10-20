@@ -5,12 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch server.ts",
-    "build": "vite build && esbuild server.ts --bundle --platform=node --format=esm --packages=external --sourcemap --outfile=dist/server.js",
-    "start": "node dist/server.js",
+    "build": "node --input-type=module -e \"process.env.NODE_ENV='production'; const {build}=await import('vite'); await build();\" && esbuild server.ts --bundle --platform=node --format=esm --packages=external --sourcemap --outfile=dist/server.js",
+    "start": "node --input-type=module -e \"process.env.NODE_ENV='production'; await import('./dist/server.js');\"",
     "clean": "node -e \"fs.rmSync('dist', { recursive: true, force: true })\"",
     "download-model": "tsx server/scripts/download-model.ts",
     "lint": "tsc --noEmit",
-    "test": "tsx server/tests/run-all-tests.ts"
+    "test": "tsx --test server/tests/test-hardening.ts && tsx server/tests/test-server-pdf-endpoint.ts && tsx server/tests/test-step6-architecture.ts",
+    "test:model": "tsx server/tests/run-all-tests.ts",
+    "test:integration": "tsx server/tests/test-ui-integration-flow.ts",
+    "backup": "tsx server/scripts/maintenance.ts backup",
+    "restore": "tsx server/scripts/maintenance.ts restore",
+    "test:windows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/test-lifecycle.ps1"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
@@ -19,14 +24,14 @@
     "@types/pdf-parse": "^1.1.5",
     "@vitejs/plugin-react": "^5.0.4",
     "dotenv": "^17.2.3",
-    "express": "^4.21.2",
+    "express": "^4.22.3",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
-    "multer": "^2.2.0",
-    "node-llama-cpp": "^3.20.0",
+    "multer": "^2.4.0",
+    "node-llama-cpp": "^3.22.2",
     "pdf-parse": "^2.4.5",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
@@ -42,5 +47,12 @@
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.3"
+  },
+  "engines": {
+    "node": ">=24.0.0 <25"
+  },
+  "overrides": {
+    "simple-git": "^4.0.2",
+    "@simple-git/argv-parser": "^2.0.1"
   }
 }

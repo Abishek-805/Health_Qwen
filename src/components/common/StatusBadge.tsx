@@ -39,6 +39,7 @@ export const StatusBadge: React.FC<Props> = ({ status = 'N/A', size = 'md', clas
     case 'DO_NOT_APPROVE':
       bgClass = 'bg-[#BC8F8F]/25 text-[#8C4A4A] border-[#BC8F8F]/50 font-bold';
       break;
+    case 'NOT_EVALUATED':
     case 'NOT_APPLICABLE':
     case 'DRAFT':
     case 'VERIFIED':

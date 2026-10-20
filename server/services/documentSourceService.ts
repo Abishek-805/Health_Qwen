@@ -1,14 +1,10 @@
 import { createRequire } from 'module';
 import { createWorker } from 'tesseract.js';
-import { execSync } from 'child_process';
-import fs from 'fs';
-import path from 'path';
-import os from 'os';
 import { normalizeText, NormalizedTextResult } from './textNormalizationService.js';
 
 let pdfParse: any;
 try {
-  const req = typeof require !== 'undefined' ? require : createRequire(import.meta.url || 'file:///' + __filename);
+  const req = createRequire(import.meta.url);
   pdfParse = req('pdf-parse');
 } catch {
   pdfParse = null;
@@ -139,22 +135,14 @@ export async function extractDocumentSource(input: {
 
   // Case 2: PDF Document
   if (isPdf) {
-    console.log(`[PDF DEBUG] Processing PDF upload: fileName=${fileName} mimeType=${mimeType} bufferBytes=${input.fileBuffer.length}`);
     const pdfRes = await processPdfBuffer(input.fileBuffer);
 
     console.log(`[PDF DEBUG] PDF extraction complete: method=${pdfRes.extractionMethod} textLength=${pdfRes.normalizedText.length} pageCount=${pdfRes.pageCount} quality=${pdfRes.ocrQuality?.qualityStatus}`);
-    if (pdfRes.normalizedText) {
-      console.log(`[PDF DEBUG] sourceTextPreview (first 500 chars):\n${pdfRes.normalizedText.substring(0, 500)}`);
-    } else {
-      console.warn('[PDF DEBUG] WARNING: PDF extraction produced 0 readable characters.');
-    }
-
     return pdfRes;
   }
 
   // Case 3: Image Document (PNG / JPG / WEBP)
   if (isImage) {
-    console.log(`[IMAGE DEBUG] Processing image upload: fileName=${fileName} mimeType=${mimeType} bufferBytes=${input.fileBuffer.length}`);
     try {
       const ocrRes = await runMultiEngineOcr(input.fileBuffer, 1);
       const norm = normalizeText(ocrRes.text);
@@ -170,7 +158,7 @@ export async function extractDocumentSource(input: {
         ocrQuality,
       };
     } catch (err) {
-      console.warn('[IMAGE DEBUG] Local image OCR warning:', err);
+      console.warn('Image OCR failed.');
     }
   }
 
@@ -213,7 +201,7 @@ async function processPdfBuffer(fileBuffer: Buffer): Promise<DocumentSourceResul
           await pdfInstance.load();
         }
         if (typeof pdfInstance.getText === 'function') {
-          const res = await pdfInstance.getText();
+          const res = await pdfInstance.getText({ first: 20, pageJoiner: '' });
           if (typeof res === 'string') {
             digitalText = res.trim();
           } else if (res && typeof res.text === 'string') {
@@ -232,14 +220,16 @@ async function processPdfBuffer(fileBuffer: Buffer): Promise<DocumentSourceResul
       }
     }
   } catch (err: any) {
-    console.warn('[PDF DEBUG] Digital text extraction warning:', err?.message || err);
+    console.warn('[PDF DEBUG] Digital text extraction warning:', 'Processing failed');
   }
 
+  if (pageCount > 20) { await pdfInstance?.destroy?.(); throw new RangeError('PDFs are limited to 20 pages.'); }
   const digitalNorm = normalizeText(digitalText);
   const digitalQuality = calculateOcrQuality(digitalNorm.normalizedText, pageCount || 1);
 
   // If digital text is sufficient (>= 30 chars), use it directly
   if (digitalNorm.normalizedText.length >= 30) {
+    await pdfInstance?.destroy?.();
     return {
       originalText: digitalNorm.originalText,
       sourceText: digitalNorm.originalText,
@@ -258,7 +248,7 @@ async function processPdfBuffer(fileBuffer: Buffer): Promise<DocumentSourceResul
 
   try {
     if (pdfInstance && typeof pdfInstance.getScreenshot === 'function') {
-      const screenshots = await pdfInstance.getScreenshot();
+      const screenshots = await pdfInstance.getScreenshot({ first: 20, desiredWidth: 1600 });
       const pages = screenshots?.pages || [];
       pageCount = pages.length || pageCount;
 
@@ -275,9 +265,10 @@ async function processPdfBuffer(fileBuffer: Buffer): Promise<DocumentSourceResul
       }
     }
   } catch (err: any) {
-    console.warn('[PDF DEBUG] Scanned PDF page OCR warning:', err?.message || err);
+    console.warn('[PDF DEBUG] Scanned PDF page OCR warning:', 'Processing failed');
   }
 
+  await pdfInstance?.destroy?.();
   const ocrNorm = normalizeText(ocrCombinedText);
   const ocrQuality = calculateOcrQuality(ocrNorm.normalizedText, pageCount || 1);
 
@@ -308,11 +299,7 @@ async function processPdfBuffer(fileBuffer: Buffer): Promise<DocumentSourceResul
   };
 }
 
-/**
- * Runs OCR using Tesseract (pure WASM) and attempts PaddleOCR if available.
- * Selects the result with the higher generic OCR quality score.
- * Worker processes are strictly terminated immediately after execution.
- */
+/** Runs supported English OCR locally; always releases the worker. */
 async function runMultiEngineOcr(
   imageBuffer: Buffer,
   pageCount: number = 1
@@ -322,7 +309,8 @@ async function runMultiEngineOcr(
   let worker: any = null;
   try {
     worker = await createWorker('eng');
-    const ret = await worker.recognize(imageBuffer);
+    let timer: ReturnType<typeof setTimeout>;
+    const ret = await Promise.race([worker.recognize(imageBuffer), new Promise<never>((_, reject) => { timer = setTimeout(() => { void worker.terminate(); reject(new Error('OCR timed out.')); }, 30_000); })]).finally(() => clearTimeout(timer));
     await worker.terminate();
     worker = null;
     tesseractText = (ret.data.text || '').trim();
@@ -332,66 +320,11 @@ async function runMultiEngineOcr(
         await worker.terminate();
       } catch {}
     }
-    console.error('[TESSERACT OCR ERROR]:', err?.message || err);
+    console.error('[TESSERACT OCR ERROR]:', 'Processing failed');
   }
 
   const tesseractQuality = calculateOcrQuality(tesseractText, pageCount);
 
-  // Strategy 2: Python PaddleOCR (if available on system)
-  let paddleText = '';
-  let paddleQuality: OcrQualityMetrics = {
-    characterCount: 0,
-    wordCount: 0,
-    nonAlphanumericRatio: 1.0,
-    singleCharTokenRatio: 1.0,
-    qualityStatus: 'UNUSABLE',
-    score: 0,
-  };
-
-  try {
-    const tmpDir = os.tmpdir();
-    const tmpImgPath = path.join(tmpDir, `ocr_page_${Date.now()}_${Math.random().toString(36).substring(7)}.png`);
-    const tmpPyPath = path.join(tmpDir, `run_paddle_${Date.now()}_${Math.random().toString(36).substring(7)}.py`);
-
-    fs.writeFileSync(tmpImgPath, imageBuffer);
-
-    const pyCode = `import sys
-from paddleocr import PaddleOCR
-try:
-    ocr = PaddleOCR(lang='en')
-    result = ocr.ocr(r'${tmpImgPath}', cls=False)
-    lines = []
-    if result and result[0]:
-        for res in result[0]:
-            lines.append(res[1][0])
-    print('\\n'.join(lines))
-except Exception as e:
-    sys.stderr.write(str(e))
-`;
-    fs.writeFileSync(tmpPyPath, pyCode);
-
-    const resStr = execSync(`python "${tmpPyPath}"`, { encoding: 'utf-8', timeout: 30000 });
-    paddleText = resStr.trim();
-
-    if (fs.existsSync(tmpImgPath)) fs.unlinkSync(tmpImgPath);
-    if (fs.existsSync(tmpPyPath)) fs.unlinkSync(tmpPyPath);
-
-    paddleQuality = calculateOcrQuality(paddleText, pageCount);
-  } catch (err) {
-    // PaddleOCR not available or failed — fallback cleanly to Tesseract
-  }
-
-  // Select the OCR result with the higher generic quality score
-  if (paddleQuality.score > tesseractQuality.score && paddleText.length >= 20) {
-    console.log(`[OCR ENGINE SELECTED] PaddleOCR (Score: ${paddleQuality.score} vs Tesseract: ${tesseractQuality.score})`);
-    return {
-      text: paddleText,
-      method: 'paddle-ocr',
-      quality: paddleQuality,
-    };
-  }
-
-  console.log(`[OCR ENGINE SELECTED] Tesseract.js (Score: ${tesseractQuality.score} vs PaddleOCR: ${paddleQuality.score})`);
   return {
     text: tesseractText,
     method: 'tesseract-ocr',

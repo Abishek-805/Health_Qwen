@@ -37,15 +37,15 @@ export const DocumentsHistoryPage: React.FC<Props> = ({ documents, onSelectDocum
           <h3 className="font-serif italic text-xl text-[#3E4234] flex items-center gap-2">
             <FileClock className="h-5 w-5 text-[#5A5A40]" /> Discharge History & Document Repository
           </h3>
-          <p className="text-xs text-[#8C8476] mt-0.5">
-            Audit logs, multi-version discharge history, and exportable multilingual A4 handouts.
+          <p className="text-xs text-[#665F54] mt-0.5">
+            Audit logs, multi-version discharge history, and exportable English A4 handouts.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative">
-            <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-[#8C8476]" />
-            <input
+            <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-[#665F54]" />
+            <input aria-label="Search patient or ID..."
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -54,7 +54,7 @@ export const DocumentsHistoryPage: React.FC<Props> = ({ documents, onSelectDocum
             />
           </div>
 
-          <select
+          <select aria-label="Filter approval status"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             className="rounded-2xl border border-[#D9D1C5] px-3 py-1.5 text-xs font-semibold text-[#3E4234] bg-white cursor-pointer"
@@ -65,15 +65,13 @@ export const DocumentsHistoryPage: React.FC<Props> = ({ documents, onSelectDocum
             <option value="CRITICAL_ISSUE">Critical Safety Issue</option>
           </select>
 
-          <select
+          <select aria-label="Filter report language"
             value={langFilter}
             onChange={(e) => setLangFilter(e.target.value)}
             className="rounded-2xl border border-[#D9D1C5] px-3 py-1.5 text-xs font-semibold text-[#3E4234] bg-white cursor-pointer"
           >
             <option value="ALL">All Languages</option>
             <option value="en">English (en)</option>
-            <option value="hi">Hindi (hi)</option>
-            <option value="ta">Tamil (ta)</option>
           </select>
         </div>
       </div>
@@ -82,7 +80,7 @@ export const DocumentsHistoryPage: React.FC<Props> = ({ documents, onSelectDocum
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="bg-[#F5F5F0] text-[#8C8476] text-[10px] uppercase tracking-wider font-semibold border-b border-[#D9D1C5]/60">
+              <tr className="bg-[#F5F5F0] text-[#665F54] text-[10px] uppercase tracking-wider font-semibold border-b border-[#D9D1C5]/60">
                 <th className="p-3.5 rounded-l-xl">Patient Name & ID</th>
                 <th className="p-3.5">Language</th>
                 <th className="p-3.5">Version</th>
@@ -113,7 +111,7 @@ export const DocumentsHistoryPage: React.FC<Props> = ({ documents, onSelectDocum
                   <td className="p-3.5">
                     <StatusBadge status={doc.approvalStatus} size="sm" />
                   </td>
-                  <td className="p-3.5 text-[#8C8476]">
+                  <td className="p-3.5 text-[#665F54]">
                     {doc.approvedBy ? `${doc.approvedBy.name} (${doc.approvedBy.role})` : 'Unsigned'}
                   </td>
                   <td className="p-3.5 text-right">
@@ -155,7 +153,7 @@ export const DocumentsHistoryPage: React.FC<Props> = ({ documents, onSelectDocum
               </div>
               <button
                 onClick={() => setViewDocModal(null)}
-                className="rounded-full p-1.5 text-[#8C8476] hover:bg-[#F5F5F0] hover:text-[#3E4234] cursor-pointer transition-colors"
+                className="rounded-full p-1.5 text-[#665F54] hover:bg-[#F5F5F0] hover:text-[#3E4234] cursor-pointer transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -186,7 +184,7 @@ export const DocumentsHistoryPage: React.FC<Props> = ({ documents, onSelectDocum
                   <StatusBadge status={viewDocModal.auditResult?.overallStatus || 'PASS'} />
                   <span className="font-semibold text-xs">Recommendation: {viewDocModal.auditResult?.approvalRecommendation}</span>
                 </div>
-                <p className="text-xs text-[#8C8476]">{viewDocModal.auditResult?.summary}</p>
+                <p className="text-xs text-[#665F54]">{viewDocModal.auditResult?.summary}</p>
               </div>
             </div>
 

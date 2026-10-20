@@ -4,6 +4,10 @@ import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const PDFParse = require('pdf-parse');
 
+process.env.DATA_PATH = ':memory:';
+process.env.APP_USERNAME = 'pdf-test';
+process.env.APP_PASSWORD = 'pdf-test-password-at-least-16';
+const auth = 'Basic ' + Buffer.from('pdf-test:pdf-test-password-at-least-16').toString('base64');
 console.log('====================================================');
 console.log('RUNNING SERVER PDF GENERATOR & ENDPOINT TEST SUITE');
 console.log('====================================================');
@@ -110,6 +114,10 @@ async function runTests() {
   // ════════════════════════════════════════════════════════════
   const { default: express } = await import('express');
   const { apiRouter } = await import('../routes/api.js');
+  const { documentRepository } = await import('../repositories/documentRepository');
+  documentRepository.createDocument({ ...mockApprovedDoc, currentVersion: 3 });
+  documentRepository.createDocument({ ...mockCriticalDoc, id: 'critical', currentVersion: 3 });
+  documentRepository.createDocument({ ...mockApprovedDoc, id: 'unapproved', approvedBy: undefined, approvalStatus: 'AUDITED', currentVersion: 3 });
   const app = express();
   app.use(express.json({ limit: '25mb' }));
   app.use(express.urlencoded({ extended: true, limit: '25mb' }));
@@ -131,8 +139,8 @@ async function runTests() {
     try {
       const res13 = await fetch(`${base}/api/generate-approved-pdf`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(mockApprovedDoc),
+        headers: { Authorization: auth, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentId: mockApprovedDoc.id }),
       });
       contentType = res13.headers.get('content-type') || '';
       contentDisposition = res13.headers.get('content-disposition') || '';
@@ -153,10 +161,10 @@ async function runTests() {
     let ok14 = false;
     let details14 = '';
     try {
-      const formBody = new URLSearchParams({ payload: JSON.stringify(mockApprovedDoc) }).toString();
+      const formBody = new URLSearchParams({ documentId: mockApprovedDoc.id }).toString();
       const res14 = await fetch(`${base}/api/generate-approved-pdf`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        headers: { Authorization: auth, 'Content-Type': 'application/x-www-form-urlencoded' },
         body: formBody,
       });
       const bytes14 = Buffer.from(await res14.arrayBuffer());
@@ -173,11 +181,11 @@ async function runTests() {
     try {
       const res15 = await fetch(`${base}/api/generate-approved-pdf`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(mockCriticalDoc),
+        headers: { Authorization: auth, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentId: 'critical' }),
       });
       const body15: any = await res15.json().catch(() => ({}));
-      ok15 = res15.status === 403 && (body15.code === 'CRITICAL_AUDIT_BLOCK' || (body15.message || '').includes('critical'));
+      ok15 = res15.status === 403 && (body15.code === 'CRITICAL_AUDIT_BLOCK' || body15.error === 'CRITICAL_AUDIT_BLOCK');
       details15 = `HTTP ${res15.status} | code=${body15.code}`;
     } catch (e: any) {
       details15 = e.message;
@@ -190,13 +198,13 @@ async function runTests() {
     try {
       const okRes = await fetch(`${base}/api/precheck-approved-pdf`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(mockApprovedDoc),
+        headers: { Authorization: auth, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentId: mockApprovedDoc.id }),
       });
       const badRes = await fetch(`${base}/api/precheck-approved-pdf`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(mockCriticalDoc),
+        headers: { Authorization: auth, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentId: 'critical' }),
       });
       ok16 = okRes.status === 200 && badRes.status === 403;
       details16 = `approved=HTTP ${okRes.status}, critical=HTTP ${badRes.status}`;
@@ -212,8 +220,8 @@ async function runTests() {
       const unapproved = { ...mockApprovedDoc, approvedBy: undefined };
       const res17 = await fetch(`${base}/api/generate-approved-pdf`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(unapproved),
+        headers: { Authorization: auth, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentId: 'unapproved' }),
       });
       ok17 = res17.status === 400;
       details17 = `HTTP ${res17.status} (expected 400 MISSING_APPROVAL)`;

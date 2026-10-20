@@ -183,14 +183,14 @@ Fever > 100.4°F, spreading redness around foot wound, or foul odor.`;
               <Upload className="h-5 w-5 text-[#5A5A40]" />
               <span>Step 1 — Upload & Extract Clinical Data</span>
             </h3>
-            <p className="text-xs text-[#8C8476] mt-0.5">
+            <p className="text-xs text-[#665F54] mt-0.5">
               Upload discharge records in PDF, JPG, PNG, or paste clinical text. Local Qwen2.5 engine will extract structured fields and flag FOUND, MISSING, and UNCLEAR values.
             </p>
           </div>
 
           {/* Quick Demo Sample Loaders */}
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-semibold text-[#8C8476]">Quick Demo Samples:</span>
+            <span className="text-[11px] font-semibold text-[#665F54]">Quick Demo Samples:</span>
             <button
               type="button"
               onClick={() => loadSampleData('angioplasty')}
@@ -214,7 +214,7 @@ Fever > 100.4°F, spreading redness around foot wound, or foul odor.`;
             type="button"
             onClick={() => setActiveTab('file')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-              activeTab === 'file' ? 'bg-[#5A5A40] text-white shadow-xs font-bold' : 'text-[#8C8476] hover:text-[#3E4234]'
+              activeTab === 'file' ? 'bg-[#5A5A40] text-white shadow-xs font-bold' : 'text-[#665F54] hover:text-[#3E4234]'
             }`}
           >
             <FileText className="h-3.5 w-3.5" /> File Upload (PDF / Image)
@@ -223,7 +223,7 @@ Fever > 100.4°F, spreading redness around foot wound, or foul odor.`;
             type="button"
             onClick={() => setActiveTab('text')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-              activeTab === 'text' ? 'bg-[#5A5A40] text-white shadow-xs font-bold' : 'text-[#8C8476] hover:text-[#3E4234]'
+              activeTab === 'text' ? 'bg-[#5A5A40] text-white shadow-xs font-bold' : 'text-[#665F54] hover:text-[#3E4234]'
             }`}
           >
             <FileCode className="h-3.5 w-3.5" /> Paste Clinical Text
@@ -247,7 +247,7 @@ Fever > 100.4°F, spreading redness around foot wound, or foul odor.`;
               <p className="text-sm font-bold text-[#3E4234]">
                 Click or drag & drop discharge file here
               </p>
-              <p className="text-xs text-[#8C8476] mt-1">
+              <p className="text-xs text-[#665F54] mt-1">
                 Supports PDF, JPG, JPEG, PNG (Up to 15 MB)
               </p>
               <input
@@ -264,11 +264,11 @@ Fever > 100.4°F, spreading redness around foot wound, or foul odor.`;
                   {file.type.startsWith('image/') ? (
                     <ImageIcon className="h-5 w-5 text-[#5A5A40]" />
                   ) : (
-                    <FileText className="h-5 w-5 text-[#BC8F8F]" />
+                    <FileText className="h-5 w-5 text-[#8C4A4A]" />
                   )}
                   <div>
                     <div className="font-bold text-[#3E4234]">{file.name}</div>
-                    <div className="text-[10px] text-[#8C8476]">
+                    <div className="text-[10px] text-[#665F54]">
                       {(file.size / (1024 * 1024)).toFixed(2)} MB • {file.type}
                     </div>
                   </div>
@@ -280,7 +280,7 @@ Fever > 100.4°F, spreading redness around foot wound, or foul odor.`;
                     setFile(null);
                     setPreviewUrl(null);
                   }}
-                  className="text-[#8C8476] hover:text-[#3E4234] text-xs font-semibold cursor-pointer"
+                  className="text-[#665F54] hover:text-[#3E4234] text-xs font-semibold cursor-pointer"
                 >
                   Remove
                 </button>
@@ -295,7 +295,7 @@ Fever > 100.4°F, spreading redness around foot wound, or foul odor.`;
           </div>
         ) : (
           <div>
-            <textarea
+            <textarea aria-label="Paste raw hospital discharge summary, clinical progress notes, or physician instructions here..."
               rows={8}
               value={textInput}
               onChange={(e) => setTextInput(e.target.value)}
@@ -315,7 +315,7 @@ Fever > 100.4°F, spreading redness around foot wound, or foul odor.`;
             <div className="w-full bg-[#D9D1C5] h-2 rounded-full overflow-hidden mt-3">
               <div className="bg-[#5A5A40] h-full animate-pulse w-3/4 rounded-full"></div>
             </div>
-            <p className="text-[11px] text-[#8C8476] mt-2 font-medium">
+            <p className="text-[11px] text-[#665F54] mt-2 font-medium">
               Local Qwen2.5 clinical extraction engine is extracting patient details, diagnoses, medications, allergies, and restrictions.
             </p>
           </div>

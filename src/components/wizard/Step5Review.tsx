@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Edit3,
   RefreshCw,
@@ -22,8 +22,9 @@ interface Props {
   verifiedData: AuthoritativeDischargeData;
   report: GeneratedReport;
   auditResult: HybridAuditResult;
-  onUpdateReport: (updatedReport: GeneratedReport, reAuditResult?: HybridAuditResult) => void;
+  onUpdateReport: (updatedReport: GeneratedReport, reAuditResult?: HybridAuditResult) => Promise<void>;
   onProceedToApproval: () => void;
+  onDirtyChange: (dirty: boolean) => void;
   isLoading: boolean;
   setIsLoading: (val: boolean) => void;
 }
@@ -34,6 +35,7 @@ export const Step5Review: React.FC<Props> = ({
   auditResult,
   onUpdateReport,
   onProceedToApproval,
+  onDirtyChange,
   isLoading,
   setIsLoading,
 }) => {
@@ -41,6 +43,9 @@ export const Step5Review: React.FC<Props> = ({
   const [activeRegenSection, setActiveRegenSection] = useState<keyof ReportSections | null>(null);
   const [regenPrompt, setRegenPrompt] = useState<string>('');
   const [isReAuditing, setIsReAuditing] = useState<boolean>(false);
+
+  const hasUnsavedEdits = JSON.stringify(sections) !== JSON.stringify(report.sections);
+  useEffect(() => { onDirtyChange(hasUnsavedEdits); return () => onDirtyChange(false); }, [hasUnsavedEdits, onDirtyChange]);
 
   const handleSectionTextChange = (key: keyof ReportSections, value: string) => {
     setSections((prev) => ({ ...prev, [key]: value }));
@@ -74,7 +79,7 @@ export const Step5Review: React.FC<Props> = ({
       }
 
       const reAuditResult = (await res.json()) as HybridAuditResult;
-      onUpdateReport(updatedReport, reAuditResult);
+      await onUpdateReport(updatedReport, reAuditResult);
     } catch (err) {
       console.error('Re-audit error:', err);
       alert('Failed to re-audit updated report.');
@@ -101,16 +106,15 @@ export const Step5Review: React.FC<Props> = ({
       });
 
       if (!res.ok) {
-        throw new Error('Section regeneration failed.');
+        throw new Error((await res.json()).error || 'Section regeneration failed.');
       }
 
       const data = await res.json();
-      setSections((prev) => ({ ...prev, [activeRegenSection]: data.newContent }));
+      setSections((prev) => ({ ...prev, [activeRegenSection]: data.updatedSectionText }));
       setActiveRegenSection(null);
       setRegenPrompt('');
     } catch (err) {
-      console.error('Section regen error:', err);
-      alert('Failed to regenerate section.');
+      alert(err instanceof Error ? err.message : 'Failed to regenerate section.');
     } finally {
       setIsLoading(false);
     }
@@ -142,7 +146,7 @@ export const Step5Review: React.FC<Props> = ({
                 Report v{report.version}
               </span>
             </h3>
-            <p className="text-xs text-[#8C8476] mt-0.5">
+            <p className="text-xs text-[#665F54] mt-0.5">
               Refine instructions directly or prompt AI to adjust specific sections. Any modifications trigger a version increment and automated re-audit.
             </p>
           </div>
@@ -150,7 +154,7 @@ export const Step5Review: React.FC<Props> = ({
 
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <div className="text-[10px] font-bold uppercase text-[#8C8476]">Current Audit Status</div>
+            <div className="text-[10px] font-bold uppercase text-[#665F54]">Current Audit Status</div>
             <StatusBadge status={auditResult.overallStatus} size="sm" />
           </div>
           <button
@@ -180,21 +184,21 @@ export const Step5Review: React.FC<Props> = ({
 
           <div className="space-y-4 text-xs">
             <div>
-              <span className="text-[#8C8476] block text-[10px] uppercase font-bold">Patient</span>
+              <span className="text-[#665F54] block text-[10px] uppercase font-bold">Patient</span>
               <p className="font-bold text-white text-sm">
                 {verifiedData.patient.name.value} ({verifiedData.patient.patientId.value})
               </p>
             </div>
 
             <div>
-              <span className="text-[#8C8476] block text-[10px] uppercase font-bold">Diagnoses</span>
+              <span className="text-[#665F54] block text-[10px] uppercase font-bold">Diagnoses</span>
               <p className="text-[#D9D1C5]">
                 {verifiedData.diagnosis.map((d) => d.value).join(', ') || 'None specified'}
               </p>
             </div>
 
             <div>
-              <span className="text-[#8C8476] block text-[10px] uppercase font-bold">Verified Medications</span>
+              <span className="text-[#665F54] block text-[10px] uppercase font-bold">Verified Medications</span>
               <ul className="mt-1 space-y-1">
                 {verifiedData.medications.map((m, i) => (
                   <li key={i} className="rounded-xl bg-[#2A2D23] p-2.5 border border-[#5A5A40]/30">
@@ -206,14 +210,14 @@ export const Step5Review: React.FC<Props> = ({
             </div>
 
             <div>
-              <span className="text-[#BC8F8F] block text-[10px] uppercase font-bold">Allergies</span>
-              <p className="text-[#BC8F8F] font-bold">
+              <span className="text-[#8C4A4A] block text-[10px] uppercase font-bold">Allergies</span>
+              <p className="text-[#8C4A4A] font-bold">
                 {verifiedData.allergies.map((a) => a.value).join(', ') || 'NKDA (No Known Allergies)'}
               </p>
             </div>
 
             <div>
-              <span className="text-[#8C8476] block text-[10px] uppercase font-bold">Follow-Up</span>
+              <span className="text-[#665F54] block text-[10px] uppercase font-bold">Follow-Up</span>
               <p className="text-[#D9D1C5]">
                 {verifiedData.followUp.map((fu) => `${fu.provider} on ${fu.date} @ ${fu.time}`).join(' | ') ||
                   'None specified'}
@@ -247,7 +251,7 @@ export const Step5Review: React.FC<Props> = ({
                   </button>
                 </div>
 
-                <textarea
+                <textarea aria-label={secTitle}
                   rows={3}
                   value={secContent}
                   onChange={(e) => handleSectionTextChange(secKey, e.target.value)}
@@ -258,13 +262,14 @@ export const Step5Review: React.FC<Props> = ({
           })}
 
           <div className="pt-4 flex justify-between items-center">
-            <div className="text-xs text-[#8C8476] flex items-center gap-2 font-medium">
+            <div className="text-xs text-[#665F54] flex items-center gap-2 font-medium">
               <ShieldAlert className="h-4 w-4 text-[#D2B48C]" />
-              <span>Ensure overall status is PASS or REVIEW_REQUIRED before sign-off.</span>
+              <span>Save all edits and review the current audit before sign-off.</span>
             </div>
 
             <button
               type="button"
+              disabled={isLoading || hasUnsavedEdits}
               onClick={onProceedToApproval}
               className="flex items-center gap-2 rounded-2xl bg-[#5A5A40] px-6 py-3 text-xs font-bold text-white shadow-xs hover:bg-[#4A4A34] active:scale-95 transition-all cursor-pointer uppercase tracking-wider"
             >
@@ -288,17 +293,17 @@ export const Step5Review: React.FC<Props> = ({
               </div>
               <button
                 onClick={() => setActiveRegenSection(null)}
-                className="rounded-full p-1 text-[#8C8476] hover:bg-[#F5F5F0] hover:text-[#3E4234] cursor-pointer"
+                className="rounded-full p-1 text-[#665F54] hover:bg-[#F5F5F0] hover:text-[#3E4234] cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            <p className="text-xs text-[#8C8476] mb-3">
+            <p className="text-xs text-[#665F54] mb-3">
               Describe how you want AI to rewrite this section (e.g., &quot;Simplify terms for a senior citizen&quot;, &quot;Add caution for low sodium&quot;).
             </p>
 
-            <textarea
+            <textarea aria-label="Type revision prompt..."
               rows={4}
               value={regenPrompt}
               onChange={(e) => setRegenPrompt(e.target.value)}

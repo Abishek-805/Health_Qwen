@@ -46,12 +46,7 @@ export function runDeterministicAudit(
   }
 
   if (verifiedName) {
-    const lastNamePart = verifiedName.split(' ').pop() || '';
-    if (
-      report.patientName &&
-      !report.patientName.toLowerCase().includes(lastNamePart.toLowerCase()) &&
-      !verifiedName.toLowerCase().includes(report.patientName.toLowerCase())
-    ) {
+    if (report.patientName.trim().toLowerCase().replace(/\s+/g, ' ') !== verifiedName.trim().toLowerCase().replace(/\s+/g, ' ')) {
       findings.push({
         id: `det-pname-1`,
         category: 'PATIENT_INFORMATION',
@@ -137,32 +132,30 @@ export function runDeterministicAudit(
       return;
     }
 
-    // Check Dosage Mismatch
+    // Compare the first dose attached to this medication, including its unit.
     if (med.dosage && med.dosageStatus === 'FOUND') {
-      const numericInVerified = extractNumbers(med.dosage);
-      if (numericInVerified.length > 0) {
-        // Find line or sentence in report containing medName
-        const sentences = fullText.split(/[\n.]+/);
-        const medSentence = sentences.find((s) => s.toLowerCase().includes(medNameLower)) || '';
-        const numericInReport = extractNumbers(medSentence);
+      const quantity = /\d+(?:\.\d+)?\s*(?:mcg|mg|g|ml|mL|units?|iu|tablets?|capsules?)(?:\s*\/\s*\d*(?:\.\d+)?\s*(?:ml|mL|kg|h))?\b/gi;
+      const expected = med.dosage.match(quantity)?.map(value => value.toLowerCase().replace(/\s/g, '')) || [];
+      const allowed = [...expected, ...(med.instructions.match(quantity)?.map(value => value.toLowerCase().replace(/\s/g, '')) || [])];
+      const lines = report.sections.medicationInstructions.split(/\n/).filter(line => line.toLowerCase().includes(medNameLower));
+      const matchingDoses = lines.map(line => {
+        const start = line.toLowerCase().indexOf(medNameLower);
+        return line.slice(start).match(quantity)?.map(value => value.toLowerCase().replace(/\s/g, '')) || [];
+      });
+      if (!expected.length || !matchingDoses.length || matchingDoses.some(doses => expected.some((value, index) => doses[index] !== value) || doses.some(value => !allowed.includes(value)))) {
+        findings.push({ id: 'det-med-dose-mismatch-' + idx, category: 'MEDICATIONS', categoryName: 'Medications', severity: 'CRITICAL', status: 'CRITICAL_ISSUE',
+          title: 'Dosage Mismatch for ' + med.name, verifiedSourceText: med.name + ' ' + med.dosage,
+          generatedReportText: lines.join(' '), whyItMatters: 'The medication dose and unit must match the verified source.', isDeterministic: true });
+      }
+    }
 
-        if (numericInReport.length > 0) {
-          const matchedDose = numericInReport.some((num) => numericInVerified.includes(num));
-          if (!matchedDose) {
-            findings.push({
-              id: `det-med-dose-mismatch-${idx}`,
-              category: 'MEDICATIONS',
-              categoryName: 'Medications',
-              severity: 'CRITICAL',
-              status: 'CRITICAL_ISSUE',
-              title: `Dosage Mismatch for ${med.name}`,
-              verifiedSourceText: `${med.name} ${med.dosage}`,
-              generatedReportText: medSentence.trim(),
-              whyItMatters: `Verified dosage (${med.dosage}) differs from generated text (${medSentence.trim()}). High toxicity or underdosing risk.`,
-              isDeterministic: true,
-            });
-          }
-        }
+    for (const [key, fieldStatus] of [['frequency', med.frequencyStatus], ['duration', med.durationStatus]] as const) {
+      const expected = med[key].trim().toLowerCase().replace(/\s+/g, ' ');
+      const line = report.sections.medicationInstructions.split(/\n/).find(value => value.toLowerCase().includes(medNameLower)) || '';
+      if (fieldStatus === 'FOUND' && expected && !line.toLowerCase().replace(/\s+/g, ' ').includes(expected)) {
+        findings.push({ id: 'det-med-' + key + '-mismatch-' + idx, category: 'MEDICATIONS', categoryName: 'Medications', severity: 'CRITICAL', status: 'CRITICAL_ISSUE',
+          title: 'Medication ' + key + ' differs from verified source', verifiedSourceText: med[key], generatedReportText: line,
+          whyItMatters: 'Preserve the verified medication schedule; review changes against the original source.', isDeterministic: true });
       }
     }
 
@@ -175,7 +168,7 @@ export function runDeterministicAudit(
 
     if (freqMissing) {
       const sentences = fullText.split(/[\n.]+/);
-      const medSentence = sentences.find((s) => s.toLowerCase().includes(medNameLower)) || '';
+      const medSentence = report.sections.medicationInstructions.split(/\n/).find(s => s.toLowerCase().includes(medNameLower)) || '';
 
       // Check if generated sentence specifies invented frequency like "twice daily", "2 times", "every 8 hours", "3 times"
       const inventedFreqPattern = /twice|thrice|2 times|3 times|4 times|every \d+ hours|daily|morning and night|bid|tid|qid/i;
