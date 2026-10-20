@@ -10,7 +10,7 @@ import { generateApprovedDischargePdf } from '../services/serverPdfGenerator';
 import { normalizeCanonicalData } from '../services/localClinicalExtractionService';
 import { reconcileExtractions } from '../services/reconcileExtraction';
 import { verified } from '../validation';
-import { Step2Verify, createBlankFollowUp, editFollowUp, ReviewFieldStatus } from '../../src/components/wizard/Step2Verify';
+import { Step2Verify, createBlankFollowUp, editFollowUp, ReviewFieldStatus, markAllReviewed } from '../../src/components/wizard/Step2Verify';
 import { sourceNavigationBlocked } from '../../src/pages/CreateInstructionsPage';
 import { mapCanonicalToStructured } from '../services/clinicalExtractionService';
 import { Step5Review } from '../../src/components/wizard/Step5Review';
@@ -114,18 +114,41 @@ test('opposing source role labels cannot validate medication, allergy or follow-
 
 test('uncertain values can be explicitly reviewed unchanged without automatic promotion', () => {
   let reviewed = 0;
-  const element = ReviewFieldStatus({ status: 'UNCLEAR', label: 'patient name', onReview: () => { reviewed++; } });
+  const element = ReviewFieldStatus({ status: 'UNCLEAR', label: 'patient name', onReview: status => { assert.equal(status, 'FOUND'); reviewed++; } });
   assert.equal(reviewed, 0);
-  const button = element.props.children[1];
-  assert.equal(button.props['aria-label'], 'Confirm patient name against original source');
-  button.props.onClick();
+  assert.equal(element.props['aria-label'], 'Change patient name status to FOUND');
+  element.props.onClick();
   assert.equal(reviewed, 1);
+  const found = ReviewFieldStatus({ status: 'FOUND', label: 'patient name', onReview: status => { assert.equal(status, 'UNCLEAR'); reviewed++; } });
+  found.props.onClick();
+  assert.equal(reviewed, 2);
   const missing = renderToStaticMarkup(React.createElement(ReviewFieldStatus, { status: 'MISSING', label: 'age', onReview: () => { reviewed++; } }));
-  assert.doesNotMatch(missing, /Mark reviewed/);
+  assert.doesNotMatch(missing, /<button/);
   const data = structuredClone(mockApprovedDoc.verifiedData!); data.patient.name.status = 'UNCLEAR';
   const html = renderToStaticMarkup(React.createElement(Step2Verify, { extractedData: data, clinicianName: 'synthetic-reviewer', onVerifyComplete: () => {}, onDirtyChange: () => {} }));
-  assert.match(html, /Confirm patient name against original source/);
+  assert.match(html, /Change patient name status to FOUND/);
+  assert.match(html, /Mark all reviewed/);
+  assert.doesNotMatch(html, />Mark reviewed</);
   assert.equal(data.patient.name.status, 'UNCLEAR');
+});
+
+test('bulk review preserves values, leaves empty fields missing and does not mutate the source', () => {
+  const data = structuredClone(mockApprovedDoc.verifiedData!);
+  data.patient.name.status = 'UNCLEAR';
+  data.medications[0].dosageStatus = 'UNCLEAR';
+  data.medications[0].duration = ''; data.medications[0].durationStatus = 'UNCLEAR';
+  data.followUp[0].date = ''; data.followUp[0].dateStatus = 'UNCLEAR';
+  data.followUp[0].providerStatus = 'UNCLEAR';
+  const reviewed = markAllReviewed(data);
+  assert.equal(reviewed.patient.name.status, 'FOUND');
+  assert.equal(reviewed.patient.name.value, data.patient.name.value);
+  assert.equal(reviewed.medications[0].dosage, data.medications[0].dosage);
+  assert.equal(reviewed.medications[0].dosageStatus, 'FOUND');
+  assert.equal(reviewed.medications[0].durationStatus, 'MISSING');
+  assert.equal(reviewed.followUp[0].dateStatus, 'MISSING');
+  assert.equal(reviewed.followUp[0].providerStatus, 'FOUND');
+  assert.equal(data.patient.name.status, 'UNCLEAR');
+  assert.equal(editFollowUp(reviewed.followUp[0], 'provider', reviewed.followUp[0].provider, 'UNCLEAR').status, 'UNCLEAR');
 });
 
 test('source-supported additional notes survive normalization, evidence and UI mapping', async () => {

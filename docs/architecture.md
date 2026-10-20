@@ -207,7 +207,7 @@ All paths below have prefix `/api`. All require authentication except health. Th
 
 The model is Qwen2.5-1.5B-Instruct, Q4_K_M GGUF, roughly 1.12 GB on disk. The downloader pins an official repository revision and SHA-256; initialization checks the checksum again. Downloaded weights are excluded from Git.
 
-Model loading is lazy and shared: concurrent initialization requests share one promise, and the loaded weights are cached. Each inference creates/disposes its own context. Backend selection tries the runtime's available GPU backend and falls back to CPU; configured GPU layer offload is 28 when a GPU backend is selected.
+Model loading is lazy and shared: concurrent initialization requests share one promise, and the loaded weights are cached. Each inference creates/disposes its own context. Backend selection tries the runtime's available GPU backend and falls back to CPU; GPU offloading adapts to available memory rather than fixing 28 layers. The measured Vulkan workstation offloads all 29 layers, including the output layer. Runtime metrics now include proposal/structured timings, actual generated-token count and offloaded layers; older recorded totalTokens/tokensPerSec fields remain character-based approximations.
 
 | Boundary | Current value |
 | --- | --- |

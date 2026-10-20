@@ -35,6 +35,10 @@ export interface LocalExtractionBenchmarkMetrics {
   systemRamUsedMb: number;
   loadTimeMs: number;
   inferenceTimeMs: number;
+  proposalTimeMs: number;
+  structuredTimeMs: number;
+  generatedTokens: number;
+  gpuLayers: number;
   totalTokens: number;
   tokensPerSec: number;
   geminiApiCalls: 0;
@@ -106,7 +110,8 @@ async function initializeModel(): Promise<{ llama: any; model: LlamaModel }> {
 
     cachedModel = await cachedLlama.loadModel({
       modelPath: MODEL_PATH,
-      gpuLayers: isCudaAvailable ? 28 : 0,
+      // Include the output layer when VRAM permits; 28 left it on the CPU for this 29-layer GGUF.
+      gpuLayers: isCudaAvailable ? 'auto' : 0,
     });
 
     modelLoadTimeMs = Date.now() - startLoad;
@@ -241,15 +246,22 @@ async function runExtraction(normalizedText: string): Promise<LocalClinicalExtra
   let responseText = '';
   let parsed: any;
   let proposed: any;
+  let proposalTimeMs = 0;
+  let structuredTimeMs = 0;
+  let generatedTokens = 0;
   const signal = AbortSignal.timeout(120_000);
   try {
     const session = new LlamaChatSession({ contextSequence: context.getSequence(), systemPrompt: LOCAL_EXTRACTION_SYSTEM_PROMPT, autoDisposeSequence: true });
-    const proposalText = await session.prompt(userPrompt, { temperature: 0.05, maxTokens: PROPOSAL_MAX_OUTPUT_TOKENS, signal });
+    const proposalStart = Date.now();
+    const proposalText = await session.prompt(userPrompt, { temperature: 0.05, maxTokens: PROPOSAL_MAX_OUTPUT_TOKENS, signal, onToken: tokens => { generatedTokens += tokens.length; } });
+    proposalTimeMs = Date.now() - proposalStart;
     const cleaned = cleanJsonText(proposalText);
     try { proposed = JSON.parse(cleaned); } catch { proposed = repairAndParseJson(cleaned); }
     if (!proposed?.patient || typeof proposed.patient !== 'object') throw new Error('Local model returned invalid extraction data. Retry with a clearer document.');
     session.resetChatHistory();
-    const structuredText = await session.prompt(userPrompt, { temperature: 0.05, maxTokens: EXTRACTION_MAX_OUTPUT_TOKENS, grammar, signal });
+    const structuredStart = Date.now();
+    const structuredText = await session.prompt(userPrompt, { temperature: 0.05, maxTokens: EXTRACTION_MAX_OUTPUT_TOKENS, grammar, signal, onToken: tokens => { generatedTokens += tokens.length; } });
+    structuredTimeMs = Date.now() - structuredStart;
     // Reject incomplete/schema-invalid output rather than displaying partially shifted clinical fields.
     parsed = grammar.parse(structuredText);
     responseText = proposalText + '\n' + structuredText;
@@ -260,7 +272,7 @@ async function runExtraction(normalizedText: string): Promise<LocalClinicalExtra
   const inferenceTimeMs = Math.max(1, Date.now() - startInference);
   const memoryAfter = process.memoryUsage();
 
-  console.log(`[LOCAL EXTRACTION] engine=qwen2.5-1.5b-local device=${backend} inferenceMs=${inferenceTimeMs} geminiApiCalls=0`);
+  console.log(`[LOCAL EXTRACTION] engine=qwen2.5-1.5b-local device=${backend} gpuLayers=${model.gpuLayers} inferenceMs=${inferenceTimeMs} proposalMs=${proposalTimeMs} structuredMs=${structuredTimeMs} generatedTokens=${generatedTokens} geminiApiCalls=0`);
 
 
   if (!parsed || !parsed.patient || typeof parsed.patient !== 'object') throw new Error('Model returned invalid extraction data. Retry with a clearer document.');
@@ -278,6 +290,10 @@ async function runExtraction(normalizedText: string): Promise<LocalClinicalExtra
     systemRamUsedMb: Math.max(0, systemRamUsedMb),
     loadTimeMs: modelLoadTimeMs,
     inferenceTimeMs,
+    proposalTimeMs,
+    structuredTimeMs,
+    generatedTokens,
+    gpuLayers: model.gpuLayers,
     totalTokens: approxTokens,
     tokensPerSec,
     geminiApiCalls: 0,
