@@ -32,7 +32,8 @@ flowchart TD
     API --> Source[PDF parsing / Tesseract OCR / pasted text]
     Source --> Normalize[Text normalization]
     Normalize --> Qwen[Local Qwen through node-llama-cpp]
-    Qwen --> Evidence[Source evidence checks]
+    Qwen --> Reconcile[Retain proposals and reconcile a schema-constrained read]
+    Reconcile --> Evidence[Source evidence checks]
     Evidence -->|Structured fields| UI
     API --> Templates[English report templates]
     API --> Audit[Rule audit and optional cloud findings]
@@ -53,7 +54,7 @@ The same Express server serves the UI and API. In development, Vite runs as midd
 1. **Launch and sign in.** `start.bat` invokes `scripts/app.ps1`, starts the shared server in the background, polls public `/api/health`, and opens the configured URL. HTTP readiness does not mean model readiness. The browser uses HTTP Basic authentication.
 2. **Upload or paste.** The UI submits one PDF/PNG/JPEG file or pasted text to `/api/extract-discharge`. Multer holds the file in memory; the server validates file signature against MIME type.
 3. **Read the source.** Digital PDFs use `pdf-parse`. PDFs with insufficient digital text are rendered to page images and processed with Tesseract. Image uploads use Tesseract directly. Pasted text bypasses OCR.
-4. **Normalize and extract.** Normalization preserves a copy of the original extracted text. Local Qwen receives the normalized text and a structured extraction prompt. Its response is parsed and normalized into canonical fields.
+4. **Normalize and extract.** Normalization preserves a copy of the original extracted text. Local Qwen receives the normalized text and a structured extraction prompt. An original-format local proposal read and a schema-constrained local read use reset chat histories. Their canonical fields are reconciled conservatively; unmatched proposals and conflicts remain reviewable. Explicit model uncertainty is retained.
 5. **Check evidence.** A normalized source quote must occur in the source, and the field value must occur inside that quote. Unsupported values become `UNCLEAR`. This checks textual support, not full clinical correctness.
    Existing UNCLEAR and missing/invalid model certainty are never inferred FOUND automatically. Medication clauses, recognized source meta-instructions and conflicting allergy statements receive conservative checks. These rules cannot recover omitted facts and can increase manual review for wrapped text.
 6. **Clinician verifies.** The clinician edits the fields, resolves/removes unclear entries, and confirms the source data. Server validation requires patient name/ID and binds verifier identity to the authenticated account.
@@ -109,6 +110,7 @@ sequenceDiagram
 | `server/services/documentSourceService.ts` | Digital PDF text, scanned PDF rendering, Tesseract and OCR quality metrics |
 | `server/services/textNormalizationService.ts` | Normalize whitespace/control characters while retaining original extracted text |
 | `server/services/localClinicalExtractionService.ts` | Model checksum/init/cache, inference admission, prompts, context budget, parsing and normalization |
+| `server/services/reconcileExtraction.ts` | Preserve unmatched proposals, retain explicit uncertainty and reconcile compatible structured fields |
 | `server/services/sourceEvidenceValidator.ts` | Compare values and evidence with the original extracted text |
 | `server/services/clinicalExtractionService.ts` | Canonical extraction types and mapping to UI field structures |
 | `server/ai/geminiService.ts` | Local English templates plus explicitly enabled Gemini operations |
@@ -214,10 +216,10 @@ Model loading is lazy and shared: concurrent initialization requests share one p
 | Pasted text | 32,000 characters |
 | Local-model input | 12,000 extracted characters plus tokenizer check |
 | Model context | 8,192 tokens |
-| Output allowance | 2,048 tokens |
+| Output allowance | Proposal read: 2,048 tokens; structured read: 4,096 tokens, each inside the 8,192-token context |
 | Prompt framing reserve | 256 tokens |
 | Extraction temperature | 0.05 |
-| Inference deadline | 120 seconds for the prompt call |
+| Inference deadline | One shared 120-second prompt-stage deadline across both local reads |
 | OCR deadline | 30 seconds per recognition call, not a whole-upload deadline |
 | JSON/urlencoded body | 1 MB |
 | Protected request budget | 300 requests/minute per remote address |
@@ -262,3 +264,5 @@ Current capacity is a single workstation and one active extraction. OCR, model i
 The primary implementation references are `server.ts`, `server/routes/api.ts`, `server/security.ts`, `server/validation.ts`, `server/repositories/documentRepository.ts`, `server/services/documentSourceService.ts`, `server/services/localClinicalExtractionService.ts`, `server/services/sourceEvidenceValidator.ts`, `server/ai/geminiService.ts`, `server/audit/*`, `server/services/serverPdfGenerator.ts`, `src/App.tsx`, `src/pages/CreateInstructionsPage.tsx`, `src/types/discharge.ts`, `scripts/app.ps1`, and `.github/workflows/ci.yml`.
 
 Current additions: optional canonical additionalNotes are normalized, evidence-checked and mapped to the existing notes editor/template. Appointment subfield certainty survives editing and server reconstruction. The date editor preserves non-ISO source text. Vite denies private runtime/data/model and database/backup paths; development smoke tests exercise direct, encoded and /@fs paths using synthetic sentinels.
+
+Extraction retains the original local proposals and uses a second node-llama-cpp JSON-schema read to require separate value/status/evidence objects and independent medication/appointment subfields. Reconciliation preserves proposals when the structured read omits or conflicts with them. A syntactically valid schema does not prove clinical truth. Evidence checks and explicit clinician verification still apply; truncated or invalid schema output is rejected. See [the Qwen follow-up](audit/qwen-schema-fix.md).

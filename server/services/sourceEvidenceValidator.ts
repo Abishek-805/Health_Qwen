@@ -26,13 +26,15 @@ export function validateSourceEvidence(
   const normSource = normalizeForMatching(sourceText);
   const instructionText = /\b(?:ignore.{0,40}instructions|system prompt|invent|return (?:only )?json)\b/i;
   const sourceLines = sourceText.split('\n');
+  const opposingRole = /^\s*(?:[-*#]\s*)?(?:patient(?:\s*(?:name|id))?|name|age|sex|gender|diagnos(?:is|es)|attending(?:\s+physician)?|physician|author|prepared by)\s*:/i;
+  const nonMedicationRole = /^\s*(?:[-*#]\s*)?(?:patient(?:\s*(?:name|id))?|name|age|sex|gender|diagnos(?:is|es)|attending(?:\s+physician)?|physician|author|prepared by|allerg(?:y|ies))\s*:/i;
   let totalFieldsChecked = 0;
   let verifiedCount = 0;
   let downgradedCount = 0;
   let missingCount = 0;
   let unclearCount = 0;
 
-  const validateField = (field: ExtractedField, contextSupported = true): ExtractedField => {
+  const validateField = (field: ExtractedField, contextSupported = true, invalidRole?: RegExp): ExtractedField => {
     totalFieldsChecked++;
 
     if (field.status === 'MISSING' || !field.value) {
@@ -47,10 +49,11 @@ export function validateSourceEvidence(
     const normEvidence = normalizeForMatching(field.evidence || field.value);
     const normValue = normalizeForMatching(field.value);
     const matchingLines = sourceLines.filter(line => (' ' + normalizeForMatching(line) + ' ').includes(' ' + normValue + ' '));
+    const roleConflict = invalidRole && matchingLines.length > 0 && matchingLines.every(line => invalidRole.test(line));
     const instructionOnly = instructionText.test(field.evidence || field.value) || (matchingLines.length > 0 && matchingLines.every(line => instructionText.test(line)));
     const contains = (source: string, value: string) => !!value && (' ' + source + ' ').includes(' ' + value + ' ');
     // Both the value and its quoted evidence must agree; token overlap cannot prove a clinical fact.
-    const isSupported = field.status !== 'UNCLEAR' && !instructionOnly && contextSupported && contains(normSource, normEvidence) && contains(normEvidence, normValue);
+    const isSupported = field.status !== 'UNCLEAR' && !instructionOnly && !roleConflict && contextSupported && contains(normSource, normEvidence) && contains(normEvidence, normValue);
 
     if (isSupported) {
       verifiedCount++;
@@ -72,11 +75,12 @@ export function validateSourceEvidence(
   const validateMedication = (med: ExtractedMedication): ExtractedMedication => {
     const lines = medicationLines(sourceText, med.name.value);
     const doses = new Set(lines.flatMap(line => line.slice(line.toLowerCase().indexOf(med.name.value.toLowerCase())).match(/\d+(?:\.\d+)?\s*(?:mcg|mg|g|ml|units?)\b/i)?.map(value => value.toLowerCase().replace(/\s/g, '')) || []));
-    const ambiguous = !lines.length || doses.size > 1 || lines.some(line => medicationReviewContext.test(line) ||
+    const ambiguous = !lines.length || doses.size > 1 || lines.some(line => nonMedicationRole.test(line) || medicationReviewContext.test(line) ||
       extracted.medications.some(other => other !== med && other.name.value.toLowerCase() !== med.name.value.toLowerCase() && medicationLines(line, other.name.value).length > 0));
     const supported = (field: ExtractedField) => !ambiguous && lines.some(line => {
       const normalized = ' ' + normalizeForMatching(line) + ' ';
-      return normalized.includes(' ' + normalizeForMatching(field.evidence || field.value) + ' ');
+      // The quote may include an adjacent heading; the value must still occur beside this medication.
+      return normalized.includes(' ' + normalizeForMatching(field.value) + ' ');
     });
     return {
       name: validateField(med.name, supported(med.name)),
@@ -89,7 +93,7 @@ export function validateSourceEvidence(
 
   const validateFollowUp = (fu: ExtractedFollowUp): ExtractedFollowUp => {
     return {
-      provider: validateField(fu.provider),
+      provider: validateField(fu.provider, true, opposingRole),
       date: validateField(fu.date),
       time: validateField(fu.time),
       location: validateField(fu.location),
@@ -110,7 +114,7 @@ export function validateSourceEvidence(
   const allergyLines = sourceLines.filter(line => /allerg|\bnkda\b/i.test(line));
   const negativeAllergy = /\b(?:no known (?:drug |food )?allergies|nkda|none)\b/i;
   const conflictingAllergies = allergyLines.some(line => negativeAllergy.test(line)) && allergyLines.some(line => !negativeAllergy.test(line) && !/unknown|not (?:provided|documented)/i.test(line));
-  const validatedAllergies = extracted.allergies.map(field => validateField(field, !conflictingAllergies));
+  const validatedAllergies = extracted.allergies.map(field => validateField(field, !conflictingAllergies, opposingRole));
   const validatedDietary = extracted.dietaryInstructions.map(field => validateField(field));
   const validatedWoundCare = extracted.woundCare.map(field => validateField(field));
   const validatedActivity = extracted.activityRestrictions.map(field => validateField(field));
@@ -144,13 +148,16 @@ export function validateSourceEvidence(
   };
 }
 
-function normalizeForMatching(text: string): string {
+export function normalizeForMatching(text: string): string {
   if (!text) return '';
   return text
     .toLowerCase()
     .replace(/[µμ]g/g, 'mcg')
+    .replace(/≥/g, '>=').replace(/≤/g, '<=')
+    .replace(/([<>]=?|=)/g, ' $1 ')
+    .replace(/(\d)(?=(?:mcg|mg|g|ml|units?)\b)/g, '$1 ')
     .replace(/(?<!\d)\.|\.(?!\d)/g, ' ')
-    .replace(/[^a-z0-9.\-/%\s]/g, ' ')
+    .replace(/[^a-z0-9.\-/%\s<>=]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }

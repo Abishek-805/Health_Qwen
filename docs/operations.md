@@ -19,7 +19,7 @@ The model downloader verifies pinned official Qwen weights before publishing the
 
 `start.bat` starts the combined frontend/API in a hidden background process, polls `/api/health`, and opens the app in the default browser. Repeating it reopens the managed URL. `stop.bat` stops only the recorded PID/start-time process tree; it does not kill all Node processes or arbitrary port owners. SQLite records survive restart; unsaved browser changes do not.
 
-Logs are ignored under `.runtime/stdout.log` and `.runtime/stderr.log`. Read them privately when troubleshooting. HTTP health is not model readiness: `/api/extraction-status` distinguishes MISSING_MODEL, NOT_LOADED and READY. First extraction verifies/loads weights and can be slower than warm calls.
+Logs are ignored under `.runtime/stdout.log` and `.runtime/stderr.log`. Read them privately when troubleshooting. HTTP health is not model readiness: `/api/extraction-status` distinguishes MISSING_MODEL, NOT_LOADED (loads on first use), LOADING, EXTRACTING, READY and ERROR. The sidebar refreshes every two seconds; its tooltip explains that extraction is local. First extraction verifies/loads weights and can be slower than warm calls.
 
 `npm run dev` enables backend watch restart and Vite middleware. Production-mode local execution uses `npm run build` and `npm start`; those scripts force production assets even if the shell/.env selected development. There is no supported public hosting configuration.
 
@@ -87,3 +87,5 @@ After this policy upgrade, an older saved approval is not automatically treated 
 - Database/native/startup failure: preserve data and diagnostics. Do not delete the database/WAL or reinstall dependencies in place as a first repair.
 
 Actual platform evidence and unrun checks are in [final verification](audit/final-verification-report.md).
+
+For an unchanged UNCLEAR value, compare it with the original source and click its Mark reviewed button. This is an explicit per-field human action; it does not automatically verify other fields. Correct wrongly assigned medication fields before marking them reviewed. Missing values remain missing.

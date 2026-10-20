@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { extractClinicalDataLocal } from '../services/localClinicalExtractionService';
+import { extractClinicalDataLocal, getQwenStatus } from '../services/localClinicalExtractionService';
 import { executeHybridAudit } from '../audit/hybridAudit.js';
 import { extractDocumentSource } from '../services/documentSourceService.js';
 import { validateSourceEvidence } from '../services/sourceEvidenceValidator.js';
@@ -237,6 +237,31 @@ async function runTestSuite() {
     await assert.rejects(() => extractClinicalDataLocal('Z '.repeat(6000)), /token budget/);
     passedTests++; console.log('TEST 8 PASSED: Oversized token input is rejected before inference.');
   } catch (error) { console.error('TEST 8 FAILED:', error); }
+  totalTests++;
+  try {
+    const source = 'SYNTHETIC TEST ONLY\nPatient Name: Morgan Vale\nPatient ID: SYN-772\nAge: 52\nGender: Male\nDiagnosis: Ankle sprain\nMedications:\nAcetaminophen 500 mg twice daily for 3 days.\nOmeprazole 20 mg once daily before breakfast.\nAtorvastatin 40 mg nightly.\n';
+    const pending = extractClinicalDataLocal(source);
+    assert.equal(getQwenStatus().status, 'EXTRACTING');
+    const result = await pending;
+    assert.equal(getQwenStatus().status, 'READY');
+    assert.equal(result.metrics.geminiApiCalls, 0);
+    const checked = validateSourceEvidence(result.data, source).data;
+    assert.equal(checked.patient.name.value, 'Morgan Vale');
+    assert.equal(checked.patient.name.status, 'FOUND');
+    const med = checked.medications.find(item => item.name.value === 'Acetaminophen');
+    assert.ok(med);
+    assert.equal(med.dosage.status, 'FOUND');
+    assert.equal(med.frequency.value.toLowerCase(), 'twice daily');
+    assert.match(med.duration.value, /^(?:for )?3 days$/i);
+    const omeprazole = checked.medications.find(item => item.name.value === 'Omeprazole');
+    const atorvastatin = checked.medications.find(item => item.name.value === 'Atorvastatin');
+    assert.ok(omeprazole); assert.ok(atorvastatin);
+    assert.match(omeprazole.dosage.value, /^20\s*mg$/i);
+    assert.match(omeprazole.frequency.value, /^once daily(?: before breakfast)?$/i);
+    assert.match(atorvastatin.dosage.value, /^40\s*mg$/i);
+    assert.equal(atorvastatin.frequency.value.toLowerCase(), 'nightly');
+    passedTests++; console.log('TEST 9 PASSED: real constrained local extraction returns source-supported statuses and separate medication fields; status transitions reflect inference.');
+  } catch (error) { console.error('TEST 9 FAILED:', error); }
   console.log(`TEST RESULTS SUMMARY: ${passedTests}/${totalTests} TESTS PASSED.`);
   console.log('====================================================');
 

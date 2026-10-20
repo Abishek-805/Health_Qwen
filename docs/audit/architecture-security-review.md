@@ -70,3 +70,7 @@ Policy freshness regression now covers renderer and actual HTTP approval/prechec
 | CQ-24 | High / privacy configuration defect | Authenticated Vite request returned a synthetic private runtime sentinel, proving a non-API file-serving path; no real secrets queried | Vite deny rules protect runtime/data/models, SQLite/DB/backup and default secret patterns. Direct/encoded/@fs synthetic probes return 403 in dev; production does not disclose bytes. Auth/save/approve/PDF/restart still pass. |
 
 Current audit policy: 2026-10-20.4. The final corpus is synthetic-discharge-v2 (31 cases) with one intentional notes-schema prompt revision; no score-target tuning. Remaining uncertainty is a clinical-validation gate, not an assertion that all rule categories are clinically correct. Complex scientific/range/qualifier dose meanings and provider/date associations require source review; local quantity/string checks are incomplete and are not a typed clinical proof system.
+
+## Qwen follow-up after aa63a40
+
+[QWEN-01 through QWEN-08](qwen-schema-fix.md) record confirmed status-display, output-schema, evidence, inconsistent-status, source-role, inequality and verification-control cases from the subsequent investigation. Model omissions and medical meaning remain high clinical-validation risks. The follow-up records rejected trials as well as the selected proposal-preserving protocol; do not interpret it as a clinical-readiness closure.

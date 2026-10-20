@@ -17,7 +17,7 @@ Implementation: `server/routes/api.ts`, `server/validation.ts`, `server/security
 | --- | --- | --- | --- |
 | GET `/health` | None; public | `{status:"ok"}` | HTTP readiness only; does not load the model |
 | GET `/session` | None | `{name,role}` | Authenticated server-owned identity |
-| GET `/extraction-status` | None | `engine,model,status,device,geminiApiCalls,modelPath,modelLoaded,online,message,loadTimeMs` | No model initialization; model path is repository-relative; online means weights exist, not verified readiness |
+| GET `/extraction-status` | None | `engine,model,status,device,geminiApiCalls,modelPath,modelLoaded,online,message,loadTimeMs` | No model initialization; model path is repository-relative; online means weights exist, not verified readiness; status distinguishes NOT_LOADED, LOADING, EXTRACTING, READY and ERROR |
 | GET `/ai-status` | None | `{online,model,message}` | May send a connectivity prompt to Gemini only when cloud is enabled/configured; disabled mode does not create a client |
 | GET `/settings` | None | Persisted `SystemSettings`, with account-derived `clinicianInfo` | No cloud |
 | GET `/patients` | None | `PatientRecord[]` | Derived from saved documents; not an external registry |

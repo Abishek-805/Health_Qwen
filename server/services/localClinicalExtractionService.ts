@@ -1,10 +1,33 @@
 import { MODEL_SHA256, sha256File } from '../scripts/download-model';
 import path from 'path';
 import fs from 'fs';
-import { getLlama, LlamaModel, LlamaChatSession } from 'node-llama-cpp';
+import { getLlama, LlamaModel, LlamaChatSession, type GbnfJsonSchema } from 'node-llama-cpp';
+import { reconcileExtractions } from './reconcileExtraction';
 import { CanonicalDischargeExtraction, ExtractedField } from './clinicalExtractionService.js';
 
-export const LOCAL_EXTRACTION_PROMPT_VERSION = 'local-extraction-v2-additional-notes';
+export const LOCAL_EXTRACTION_PROMPT_VERSION = 'local-extraction-v7-preserve-proposals';
+export const EXTRACTION_MAX_OUTPUT_TOKENS = 4096;
+export const PROPOSAL_MAX_OUTPUT_TOKENS = 2048;
+
+const fieldSchema = { type: 'object', properties: { value: { type: 'string' }, status: { enum: ['FOUND', 'MISSING', 'UNCLEAR'] }, evidence: { type: 'string' } } } as const;
+const fieldsSchema = (keys: string[]): GbnfJsonSchema => ({ type: 'object', properties: Object.fromEntries(keys.map(key => [key, fieldSchema])) });
+const fieldArraySchema = { type: 'array', items: fieldSchema } as const;
+const EXTRACTION_JSON_SCHEMA = {
+  type: 'object', properties: {
+    patient: fieldsSchema(['name', 'patientId', 'age', 'gender']),
+    diagnoses: fieldArraySchema,
+    procedures: fieldArraySchema,
+    medications: { type: 'array', items: fieldsSchema(['name', 'dosage', 'frequency', 'duration', 'instructions']) },
+    allergies: fieldArraySchema,
+    dietaryInstructions: fieldArraySchema,
+    woundCare: fieldArraySchema,
+    activityRestrictions: fieldArraySchema,
+    followUpAppointments: { type: 'array', items: fieldsSchema(['provider', 'date', 'time', 'location', 'instructions']) },
+    warningSigns: fieldArraySchema,
+    emergencyInstructions: fieldArraySchema,
+    additionalNotes: fieldArraySchema,
+  },
+} satisfies GbnfJsonSchema;
 
 export interface LocalExtractionBenchmarkMetrics {
   device: string;
@@ -49,9 +72,13 @@ let backend = 'CPU';
 let initialization: Promise<{ llama: any; model: LlamaModel }> | undefined;
 let inferenceActive = false;
 let modelLoadTimeMs = 0;
+let modelError = false;
 
 export function getOrInitQwenModel(): Promise<{ llama: any; model: LlamaModel }> {
-  if (!initialization) initialization = initializeModel().catch(error => { initialization = undefined; throw error; });
+  if (!initialization) {
+    modelError = false;
+    initialization = initializeModel().catch(error => { initialization = undefined; modelError = true; throw error; });
+  }
   return initialization;
 }
 async function initializeModel(): Promise<{ llama: any; model: LlamaModel }> {
@@ -101,12 +128,13 @@ async function initializeModel(): Promise<{ llama: any; model: LlamaModel }> {
 }
 
 export function getQwenStatus(): QwenStatus {
+  const modelPresent = fs.existsSync(MODEL_PATH);
   return {
     engine: 'qwen2.5-1.5b-local',
     model: 'Qwen2.5-1.5B-Instruct-Q4_K_M',
-    status: !fs.existsSync(MODEL_PATH) ? 'MISSING_MODEL' : cachedModel ? 'READY' : 'NOT_LOADED',
-    online: fs.existsSync(MODEL_PATH),
-    message: cachedModel ? 'Local model loaded' : 'Local model not loaded',
+    status: !modelPresent ? 'MISSING_MODEL' : modelError ? 'ERROR' : cachedModel ? inferenceActive ? 'EXTRACTING' : 'READY' : initialization ? 'LOADING' : 'NOT_LOADED',
+    online: modelPresent,
+    message: !modelPresent ? 'Local model file missing. Run npm run download-model.' : modelError ? 'Local model could not load. Check installation and retry extraction.' : cachedModel ? 'Local model loaded; extraction runs on this computer without a cloud API.' : initialization ? 'Verifying and loading local weights...' : 'Local weights available; loaded on the first extraction. No cloud fallback.',
     device: cachedModel ? backend : 'Not initialized',
     geminiApiCalls: 0,
     modelPath: path.relative(process.cwd(), MODEL_PATH),
@@ -201,31 +229,30 @@ export async function extractClinicalDataLocal(
   try { return await runExtraction(normalizedText); } finally { inferenceActive = false; }
 }
 async function runExtraction(normalizedText: string): Promise<LocalClinicalExtractionResult> {
-  const { model } = await getOrInitQwenModel();
+  const { llama, model } = await getOrInitQwenModel();
 
   const userPrompt = 'DISCHARGE DOCUMENT CONTENT:\n' + normalizedText + '\n\nReturn ONLY the JSON extraction object, no other text:';
   // shortcut: reserve 256 framing tokens for the pinned Qwen template, recalculate when changing the model.
-  if (model.tokenize(LOCAL_EXTRACTION_SYSTEM_PROMPT + userPrompt).length + 2048 + 256 > 8192) throw new RangeError('Document exceeds the model token budget. Split the source document.');
+  if (model.tokenize(LOCAL_EXTRACTION_SYSTEM_PROMPT + userPrompt).length + EXTRACTION_MAX_OUTPUT_TOKENS + 256 > 8192) throw new RangeError('Document exceeds the model token budget. Split the source document.');
+  const grammar = await llama.createGrammarForJsonSchema(EXTRACTION_JSON_SCHEMA);
   const context = await model.createContext({ contextSize: 8192 });
-
   const startInference = Date.now();
   const memoryBefore = process.memoryUsage();
   let responseText = '';
-
+  let parsed: any;
+  let proposed: any;
+  const signal = AbortSignal.timeout(120_000);
   try {
-    const sequence = context.getSequence();
-    const session = new LlamaChatSession({
-      contextSequence: sequence,
-      systemPrompt: LOCAL_EXTRACTION_SYSTEM_PROMPT,
-      autoDisposeSequence: true,
-    });
-
-
-    responseText = await session.prompt(userPrompt, {
-      temperature: 0.05,
-      maxTokens: 2048,
-      signal: AbortSignal.timeout(120_000),
-    });
+    const session = new LlamaChatSession({ contextSequence: context.getSequence(), systemPrompt: LOCAL_EXTRACTION_SYSTEM_PROMPT, autoDisposeSequence: true });
+    const proposalText = await session.prompt(userPrompt, { temperature: 0.05, maxTokens: PROPOSAL_MAX_OUTPUT_TOKENS, signal });
+    const cleaned = cleanJsonText(proposalText);
+    try { proposed = JSON.parse(cleaned); } catch { proposed = repairAndParseJson(cleaned); }
+    if (!proposed?.patient || typeof proposed.patient !== 'object') throw new Error('Local model returned invalid extraction data. Retry with a clearer document.');
+    session.resetChatHistory();
+    const structuredText = await session.prompt(userPrompt, { temperature: 0.05, maxTokens: EXTRACTION_MAX_OUTPUT_TOKENS, grammar, signal });
+    // Reject incomplete/schema-invalid output rather than displaying partially shifted clinical fields.
+    parsed = grammar.parse(structuredText);
+    responseText = proposalText + '\n' + structuredText;
   } finally {
     await context.dispose();
   }
@@ -236,17 +263,8 @@ async function runExtraction(normalizedText: string): Promise<LocalClinicalExtra
   console.log(`[LOCAL EXTRACTION] engine=qwen2.5-1.5b-local device=${backend} inferenceMs=${inferenceTimeMs} geminiApiCalls=0`);
 
 
-  const cleanedJson = cleanJsonText(responseText);
-  let parsed: any = {};
-  try {
-    parsed = JSON.parse(cleanedJson);
-  } catch (err) {
-    console.warn('[QwenEngine] JSON parse failed, attempting repair...');
-    parsed = repairAndParseJson(cleanedJson);
-  }
-
   if (!parsed || !parsed.patient || typeof parsed.patient !== 'object') throw new Error('Model returned invalid extraction data. Retry with a clearer document.');
-  const normalizedCanonical = normalizeCanonicalData(parsed);
+  const normalizedCanonical = reconcileExtractions(normalizeCanonicalData(proposed), normalizeCanonicalData(parsed), proposed);
 
   const approxTokens = Math.max(1, Math.ceil(responseText.length / 3));
   const tokensPerSec = Math.round((approxTokens / (inferenceTimeMs / 1000)) * 10) / 10;
@@ -354,7 +372,7 @@ export function normalizeCanonicalData(data: any): CanonicalDischargeExtraction 
       return { value: v, status: v ? 'UNCLEAR' : 'MISSING', evidence: v };
     }
     const value = typeof f.value === 'string' ? f.value.trim() : String(f.value ?? '').trim();
-    const status = ['FOUND', 'MISSING', 'UNCLEAR'].includes(f.status) ? f.status : (value ? 'UNCLEAR' : 'MISSING');
+    const status = !value ? 'MISSING' : f.status === 'FOUND' ? 'FOUND' : 'UNCLEAR';
     const evidence = typeof f.evidence === 'string' ? f.evidence.trim() : value;
     return { value, status, evidence };
   };

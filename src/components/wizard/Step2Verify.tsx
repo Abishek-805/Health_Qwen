@@ -29,6 +29,10 @@ interface Props {
   onDirtyChange: (dirty: boolean) => void;
 }
 
+export function ReviewFieldStatus({ status, onReview, label }: { status: FieldStatus; onReview: () => void; label: string }) {
+  return <span className="inline-flex flex-wrap items-center gap-1"><StatusBadge status={status} size="sm" />{status === 'UNCLEAR' && <button type="button" onClick={onReview} aria-label={`Confirm ${label} against original source`} className="rounded border border-slate-400 px-2 py-1 text-xs font-semibold text-slate-800 hover:bg-slate-100 focus-visible:outline-2">Mark reviewed</button>}</span>;
+}
+
 export function createBlankFollowUp(id: string): FollowUpItem {
   return { id, provider: '', date: '', time: '', location: '', instructions: '', status: 'MISSING' };
 }
@@ -60,6 +64,7 @@ export const Step2Verify: React.FC<Props> = ({
 
   // Helper updater for patient fields
   const updatePatientField = (field: 'name' | 'patientId' | 'age' | 'gender', value: string) => {
+    onDirtyChange(true);
     setData((prev) => ({
       ...prev,
       patient: {
@@ -79,6 +84,7 @@ export const Step2Verify: React.FC<Props> = ({
     index: number,
     value: string
   ) => {
+    onDirtyChange(true);
     setData((prev) => {
       const updated = [...prev[section]];
       updated[index] = {
@@ -116,6 +122,7 @@ export const Step2Verify: React.FC<Props> = ({
 
   // Medication Updaters
   const updateMedication = (index: number, field: keyof MedicationItem, value: string) => {
+    onDirtyChange(true);
     setData((prev) => {
       const meds = [...prev.medications];
       const target = { ...meds[index], [field]: value };
@@ -168,6 +175,7 @@ export const Step2Verify: React.FC<Props> = ({
 
   // Follow-up Updaters
   const updateFollowUp = (index: number, field: 'provider' | 'date' | 'time' | 'location' | 'instructions', value: string) => {
+    onDirtyChange(true);
     setData((prev) => {
       const items = [...prev.followUp];
       items[index] = editFollowUp(items[index], field, value);
@@ -194,7 +202,7 @@ export const Step2Verify: React.FC<Props> = ({
 
   const handleConfirmLock = () => {
     const hasUnclear = (value: unknown): boolean => !!value && typeof value === 'object' && Object.entries(value).some(([key, item]) => (key.toLowerCase().endsWith('status') && item === 'UNCLEAR') || hasUnclear(item));
-    if (hasUnclear(data)) { alert('Correct or remove every UNCLEAR field before confirming. Compare each field with the original source.'); return; }
+    if (hasUnclear(data)) { alert('Review every UNCLEAR field: compare with the original source, then use Mark reviewed, correct it, or remove it. Compare each field with the original source.'); return; }
     if (!data.patient.name.value.trim() || !data.patient.patientId.value.trim()) {
       alert('Patient Name and Patient ID are required before confirming authoritative dataset.');
       return;
@@ -230,7 +238,7 @@ export const Step2Verify: React.FC<Props> = ({
                 </span>
               </h3>
               <p className="text-xs text-[#665F54] font-medium mt-0.5">
-                AI-extracted values must be thoroughly verified by a healthcare professional. Correct errors, add missing dosages or frequencies, and confirm accuracy.
+                AI-extracted values must be thoroughly verified by a healthcare professional. Compare every value with the original source. Correct errors or use Mark reviewed for an unchanged UNCLEAR value only after checking it.
               </p>
             </div>
           </div>
@@ -258,7 +266,7 @@ export const Step2Verify: React.FC<Props> = ({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs font-bold text-slate-700">Patient Name *</label>
-                <StatusBadge status={data.patient.name.status} size="sm" />
+                <ReviewFieldStatus status={data.patient.name.status} label="patient name" onReview={() => updatePatientField('name', data.patient.name.value)} />
               </div>
               <input aria-label="Full Patient Name"
                 type="text"
@@ -271,7 +279,7 @@ export const Step2Verify: React.FC<Props> = ({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs font-bold text-slate-700">Patient ID *</label>
-                <StatusBadge status={data.patient.patientId.status} size="sm" />
+                <ReviewFieldStatus status={data.patient.patientId.status} label="patient patientId" onReview={() => updatePatientField('patientId', data.patient.patientId.value)} />
               </div>
               <input aria-label="e.g. PAT-88492"
                 type="text"
@@ -284,7 +292,7 @@ export const Step2Verify: React.FC<Props> = ({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs font-bold text-slate-700">Age</label>
-                <StatusBadge status={data.patient.age.status} size="sm" />
+                <ReviewFieldStatus status={data.patient.age.status} label="patient age" onReview={() => updatePatientField('age', data.patient.age.value)} />
               </div>
               <input aria-label="Age in years"
                 type="text"
@@ -297,7 +305,7 @@ export const Step2Verify: React.FC<Props> = ({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs font-bold text-slate-700">Gender</label>
-                <StatusBadge status={data.patient.gender.status} size="sm" />
+                <ReviewFieldStatus status={data.patient.gender.status} label="patient gender" onReview={() => updatePatientField('gender', data.patient.gender.value)} />
               </div>
               <input aria-label="Male / Female / Other"
                 type="text"
@@ -335,7 +343,7 @@ export const Step2Verify: React.FC<Props> = ({
                     className="flex-1 rounded-xl border border-slate-300 p-2 text-xs font-medium text-slate-800"
                     placeholder="Clinical Diagnosis"
                   />
-                  <StatusBadge status={item.status} size="sm" />
+                  <ReviewFieldStatus status={item.status} label={`diagnosis ${idx + 1}`} onReview={() => updateArrayItem('diagnosis', idx, item.value)} />
                   <button aria-label="Remove diagnosis"
                     type="button"
                     onClick={() => removeArrayItem('diagnosis', idx)}
@@ -371,7 +379,7 @@ export const Step2Verify: React.FC<Props> = ({
                     className="flex-1 rounded-xl border border-slate-300 p-2 text-xs font-medium text-slate-800"
                     placeholder="Surgical / Medical Procedure"
                   />
-                  <StatusBadge status={item.status} size="sm" />
+                  <ReviewFieldStatus status={item.status} label={`procedures ${idx + 1}`} onReview={() => updateArrayItem('procedures', idx, item.value)} />
                   <button aria-label="Remove procedures"
                     type="button"
                     onClick={() => removeArrayItem('procedures', idx)}
@@ -428,7 +436,7 @@ export const Step2Verify: React.FC<Props> = ({
                         className="w-full rounded-lg border border-slate-300 p-1.5 text-xs font-bold text-slate-900"
                         placeholder="Drug Name"
                       />
-                      <StatusBadge status={med.overallStatus} size="sm" />
+                      <ReviewFieldStatus status={med.overallStatus} label={`medication ${idx + 1} name`} onReview={() => updateMedication(idx, 'name', med.name)} />
                     </td>
                     <td className="p-2">
                       <div className="flex items-center gap-1">
@@ -439,7 +447,7 @@ export const Step2Verify: React.FC<Props> = ({
                           className="w-full rounded-lg border border-slate-300 p-1.5 text-xs font-medium text-slate-800"
                           placeholder="e.g. 500 mg"
                         />
-                        <StatusBadge status={med.dosageStatus} size="sm" />
+                        <ReviewFieldStatus status={med.dosageStatus} label={`medication ${idx + 1} dosage`} onReview={() => updateMedication(idx, 'dosage', med.dosage)} />
                       </div>
                     </td>
                     <td className="p-2">
@@ -451,7 +459,7 @@ export const Step2Verify: React.FC<Props> = ({
                           className="w-full rounded-lg border border-slate-300 p-1.5 text-xs font-medium text-slate-800"
                           placeholder="e.g. Once daily after breakfast"
                         />
-                        <StatusBadge status={med.frequencyStatus} size="sm" />
+                        <ReviewFieldStatus status={med.frequencyStatus} label={`medication ${idx + 1} frequency`} onReview={() => updateMedication(idx, 'frequency', med.frequency)} />
                       </div>
                     </td>
                     <td className="p-2">
@@ -462,7 +470,7 @@ export const Step2Verify: React.FC<Props> = ({
                         className="w-full rounded-lg border border-slate-300 p-1.5 text-xs text-slate-800"
                         placeholder="e.g. 30 days"
                       />
-                      <StatusBadge status={med.durationStatus} size="sm" />
+                      <ReviewFieldStatus status={med.durationStatus} label={`medication ${idx + 1} duration`} onReview={() => updateMedication(idx, 'duration', med.duration)} />
                     </td>
                     <td className="p-2">
                       <input aria-label="Medication instructions"
@@ -472,7 +480,7 @@ export const Step2Verify: React.FC<Props> = ({
                         className="w-full rounded-lg border border-slate-300 p-1.5 text-xs text-slate-800"
                         placeholder="Special rules"
                       />
-                      <StatusBadge status={med.instructionsStatus} size="sm" />
+                      <ReviewFieldStatus status={med.instructionsStatus} label={`medication ${idx + 1} instructions`} onReview={() => updateMedication(idx, 'instructions', med.instructions)} />
                     </td>
                     <td className="p-2 text-center">
                       <button aria-label="Remove Medication"
@@ -515,7 +523,7 @@ export const Step2Verify: React.FC<Props> = ({
                     className="flex-1 rounded-xl border border-rose-200 bg-rose-50/50 p-2 text-xs font-bold text-rose-900"
                     placeholder="Drug or Food Allergy"
                   />
-                  <StatusBadge status={item.status} size="sm" />
+                  <ReviewFieldStatus status={item.status} label={`allergies ${idx + 1}`} onReview={() => updateArrayItem('allergies', idx, item.value)} />
                   <button aria-label="Remove allergies"
                     type="button"
                     onClick={() => removeArrayItem('allergies', idx)}
@@ -551,7 +559,7 @@ export const Step2Verify: React.FC<Props> = ({
                     className="flex-1 rounded-xl border border-slate-300 p-2 text-xs font-medium text-slate-800"
                     placeholder="Dietary restriction / rules"
                   />
-                  <StatusBadge status={item.status} size="sm" />
+                  <ReviewFieldStatus status={item.status} label={`diet ${idx + 1}`} onReview={() => updateArrayItem('diet', idx, item.value)} />
                   <button aria-label="Remove diet"
                     type="button"
                     onClick={() => removeArrayItem('diet', idx)}
@@ -571,7 +579,7 @@ export const Step2Verify: React.FC<Props> = ({
               <h4 className="mb-3 text-sm font-bold">{{ activityRestrictions: 'Activity restrictions', woundCare: 'Wound care', warningSigns: 'Warning signs', emergencyInstructions: 'Emergency instructions', additionalNotes: 'Additional notes' }[section]}</h4>
               {data[section].map((item, idx) => <div key={idx} className="mb-2 flex items-center gap-2">
                 <input aria-label={section + ' ' + (idx + 1)} value={item.value} onChange={event => updateArrayItem(section, idx, event.target.value)} className="min-w-0 flex-1 rounded-xl border border-slate-300 p-2 text-xs" />
-                <StatusBadge status={item.status} size="sm" />
+                <ReviewFieldStatus status={item.status} label={`${section} ${idx + 1}`} onReview={() => updateArrayItem(section, idx, item.value)} />
                 <button type="button" aria-label={'Remove ' + section + ' ' + (idx + 1)} onClick={() => removeArrayItem(section, idx)}><Trash2 className="h-4 w-4" /></button>
               </div>)}
               <button type="button" onClick={() => addArrayItem(section)} className="text-sm font-bold text-blue-700">Add {section.replace(/([A-Z])/g, ' $1').toLowerCase()}</button>
@@ -602,28 +610,28 @@ export const Step2Verify: React.FC<Props> = ({
                   onChange={(e) => updateFollowUp(idx, 'provider', e.target.value)}
                   className="rounded-lg border border-slate-300 p-1.5 text-xs font-bold text-slate-800"
                   placeholder="Doctor / Clinic Name"
-                /><StatusBadge status={fu.providerStatus || fu.status} size="sm" /></div>
+                /><ReviewFieldStatus status={fu.providerStatus || (fu.provider ? fu.status : 'MISSING')} label={`appointment ${idx + 1} provider`} onReview={() => updateFollowUp(idx, 'provider', fu.provider)} /></div>
                 <div><input aria-label="date"
                   type="text"
                   placeholder="Date as stated in source"
                   value={fu.date}
                   onChange={(e) => updateFollowUp(idx, 'date', e.target.value)}
                   className="rounded-lg border border-slate-300 p-1.5 text-xs text-slate-800"
-                /><StatusBadge status={fu.dateStatus || fu.status} size="sm" /></div>
+                /><ReviewFieldStatus status={fu.dateStatus || (fu.date ? fu.status : 'MISSING')} label={`appointment ${idx + 1} date`} onReview={() => updateFollowUp(idx, 'date', fu.date)} /></div>
                 <div><input aria-label="Time (e.g. 10:30 AM)"
                   type="text"
                   value={fu.time}
                   onChange={(e) => updateFollowUp(idx, 'time', e.target.value)}
                   className="rounded-lg border border-slate-300 p-1.5 text-xs text-slate-800"
                   placeholder="Time (e.g. 10:30 AM)"
-                /><StatusBadge status={fu.timeStatus || fu.status} size="sm" /></div>
+                /><ReviewFieldStatus status={fu.timeStatus || (fu.time ? fu.status : 'MISSING')} label={`appointment ${idx + 1} time`} onReview={() => updateFollowUp(idx, 'time', fu.time)} /></div>
                 <div><input aria-label="Clinic Location / Room"
                   type="text"
                   value={fu.location}
                   onChange={(e) => updateFollowUp(idx, 'location', e.target.value)}
                   className="rounded-lg border border-slate-300 p-1.5 text-xs text-slate-800"
                   placeholder="Clinic Location / Room"
-                /><StatusBadge status={fu.locationStatus || fu.status} size="sm" /></div>
+                /><ReviewFieldStatus status={fu.locationStatus || (fu.location ? fu.status : 'MISSING')} label={`appointment ${idx + 1} location`} onReview={() => updateFollowUp(idx, 'location', fu.location)} /></div>
                 <div className="flex items-center gap-2">
                   <input aria-label="Instructions"
                     type="text"
@@ -632,7 +640,7 @@ export const Step2Verify: React.FC<Props> = ({
                     className="flex-1 rounded-lg border border-slate-300 p-1.5 text-xs text-slate-800"
                     placeholder="Instructions"
                   />
-                  <StatusBadge status={fu.instructionsStatus || fu.status} size="sm" />
+                  <ReviewFieldStatus status={fu.instructionsStatus || (fu.instructions ? fu.status : 'MISSING')} label={`appointment ${idx + 1} instructions`} onReview={() => updateFollowUp(idx, 'instructions', fu.instructions)} />
                   <button aria-label="Remove Follow Up"
                     type="button"
                     onClick={() => removeFollowUp(idx)}

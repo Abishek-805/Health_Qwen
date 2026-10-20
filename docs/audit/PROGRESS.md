@@ -42,3 +42,13 @@ The detailed review, dispositions, roadmap and matrix are in this directory. Pub
 4. Repeat full browser source-edit/discard/new-session/approval/download and accessibility checks with working interactive dialog control.
 
 Clinical readiness is not established. Do not substitute passing engineering tests for qualified review of the original source and every generated instruction.
+
+## Qwen follow-up after aa63a40 — local verification complete
+
+- Reproduced stale NOT_LOADED display, 16 primitive model fields without status objects, false downgrades for adjacent headings/unit spacing, inconsistent nonempty MISSING values, opposing role evidence and erased inequality direction. Relevant new regressions failed before their fixes.
+- Final protocol is local-extraction-v7-preserve-proposals: original v2 prompt unchanged, local proposal read plus schema-constrained read, conservative reconciliation, source validation and explicit per-field human review. No new weights/dependencies/cloud fallback.
+- Final actual 31/31 model cases completed with zero execution errors: value-only 201/237 (84.81%), value/status 163/237 (68.78%), missing predicted fields 25. Additional-notes omission and clinical reliability gaps remain. This is in-sample development verification, not clinical validation.
+- TypeScript, 38 fast tests, 18 PDF checks and architecture checks PASS. Native model/OCR 9/9 PASS including actual three-medication fields/states; integration 18/18 PASS with zero Gemini calls. Pipeline 9/9 and final build/production/development smoke PASS.
+- Isolated browser fixture verified unchanged-value review, field independence, progression to generation, invalidated old approval and saving a new version. Full browser upload/download completion and formal accessibility remain outside this verification.
+- Rejected v3/v4/v6 complete trials and v5 partial trial are retained in the report/metadata; labels were not rewritten. Raw synthetic predictions/logs remain ignored. Fingerprints and source-prompt equality were checked; publication adds one explanatory reconciliation comment without changing measured logic.
+- Artifact/link/credential-pattern/source-fingerprint checks and final build PASS. Managed app restarted successfully and public health reports ok. Publication is authorized; the handoff supplies the exact pushed SHA and actual remote CI result. Next substantive work is qualified independent clinical review and an agreed frozen hold-out study.

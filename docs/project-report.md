@@ -1,5 +1,7 @@
 # Healthcare Discharge Instructions Generator: engineering project report
 
+> Audit snapshot from commit aa63a40. The subsequent Qwen schema/status and verification-control investigation is recorded in [the follow-up report](audit/qwen-schema-fix.md). Previous model scores below describe prompt v2, not the revised v7 two-read protocol.
+
 Date: 20 October 2026. Repository baseline: `374b2d4`; this report describes the remediation changes delivered with this report. Exact publication revision and CI outcome are recorded in the handoff. No clinical endorsement or regulatory certification is asserted.
 
 ## 1. Project summary and problem

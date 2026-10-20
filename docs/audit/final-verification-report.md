@@ -1,5 +1,7 @@
 # Final engineering verification
 
+> Audit snapshot from commit aa63a40. The subsequent Qwen schema/status and verification-control investigation is recorded in [the follow-up report](qwen-schema-fix.md). Previous model scores below describe prompt v2, not the revised v7 two-read protocol.
+
 Date: 20 October 2026. Starting branch/commit: `main`, `374b2d4a42536e2c6b56ec3e50de897a0fb87503`. Initially the only untracked file was the prior system-design document; its content was retained in `docs/architecture.md` with the original path now pointing there. Tests below used synthetic fixtures, isolated databases and disabled clinical cloud processing.
 
 ## Outcome

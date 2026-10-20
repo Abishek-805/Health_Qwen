@@ -8,8 +8,9 @@ import { validateSourceEvidence } from '../services/sourceEvidenceValidator';
 import { runDeterministicAudit } from '../audit/deterministicAudit';
 import { generateApprovedDischargePdf } from '../services/serverPdfGenerator';
 import { normalizeCanonicalData } from '../services/localClinicalExtractionService';
+import { reconcileExtractions } from '../services/reconcileExtraction';
 import { verified } from '../validation';
-import { Step2Verify, createBlankFollowUp, editFollowUp } from '../../src/components/wizard/Step2Verify';
+import { Step2Verify, createBlankFollowUp, editFollowUp, ReviewFieldStatus } from '../../src/components/wizard/Step2Verify';
 import { sourceNavigationBlocked } from '../../src/pages/CreateInstructionsPage';
 import { mapCanonicalToStructured } from '../services/clinicalExtractionService';
 import { Step5Review } from '../../src/components/wizard/Step5Review';
@@ -32,6 +33,99 @@ test('matching source text never promotes model uncertainty to FOUND', () => {
 test('malformed model fields cannot acquire FOUND by schema coercion', () => {
   assert.equal(normalizeCanonicalData({ patient: { name: 'Synthetic Patient' } }).patient.name.status, 'UNCLEAR');
   assert.equal(normalizeCanonicalData({ patient: { name: { value: 'Synthetic Patient', status: 'invalid' } } }).patient.name.status, 'UNCLEAR');
+});
+
+test('reconciliation requires a structured read and preserves explicit uncertainty and conflicts', () => {
+  const raw = { patient: { name: 'Synthetic Patient', patientId: 'SYN-01' } };
+  const proposed = normalizeCanonicalData(raw);
+  assert.equal(proposed.patient.name.status, 'UNCLEAR');
+  const agreed = reconcileExtractions(proposed, canonical(), raw);
+  assert.equal(agreed.patient.name.status, 'FOUND');
+  const uncertainRaw = { patient: { name: field('Synthetic Patient', 'UNCLEAR') } };
+  assert.equal(reconcileExtractions(normalizeCanonicalData(uncertainRaw), canonical(), uncertainRaw).patient.name.status, 'UNCLEAR');
+  const different = canonical(); different.patient.name = field('Different Patient'); different.patient.gender = field('Synthetic Patient');
+  const conflict = reconcileExtractions(proposed, different, raw);
+  assert.equal(conflict.patient.name.value, 'Synthetic Patient'); assert.equal(conflict.patient.name.status, 'UNCLEAR');
+  assert.equal(validateSourceEvidence(agreed, 'Different Patient SYN-01').data.patient.name.status, 'UNCLEAR');
+});
+
+test('reconciliation preserves omitted proposals and duplicates and realigns only covered medication values', () => {
+  const raw = { patient: { name: 'Synthetic Patient', patientId: 'SYN-01' }, diagnoses: ['Source condition'], medications: [{ name: 'Cefuroxime', dosage: '500 mg twice daily', frequency: '3 days' }] };
+  const proposed = normalizeCanonicalData(raw);
+  const omitted = reconcileExtractions(proposed, canonical(), raw);
+  assert.equal(omitted.diagnoses[0].value, 'Source condition'); assert.equal(omitted.diagnoses[0].status, 'UNCLEAR');
+  assert.equal(omitted.medications[0].dosage.value, '500 mg twice daily');
+  const typed = { ...canonical(), medications: [{ name: field('Cefuroxime'), dosage: field('500 mg'), frequency: field('twice daily'), duration: field('3 days'), instructions: field() }] };
+  const aligned = reconcileExtractions(proposed, typed, raw);
+  assert.equal(aligned.medications[0].dosage.value, '500 mg'); assert.equal(aligned.medications[0].frequency.value, 'twice daily'); assert.equal(aligned.medications[0].duration.value, '3 days');
+  typed.medications[0].dosage = field('900 mg');
+  const conflict = reconcileExtractions(proposed, typed, raw);
+  assert.equal(conflict.medications[0].dosage.value, '500 mg twice daily'); assert.equal(conflict.medications[0].dosage.status, 'UNCLEAR');
+  proposed.medications.push(structuredClone(proposed.medications[0]));
+  assert.equal(reconcileExtractions(proposed, typed, raw).medications.length, 2);
+  const explicit = structuredClone(raw); explicit.medications[0].dosage = field('500 mg twice daily', 'UNCLEAR') as any;
+  typed.medications[0].dosage = field('500 mg');
+  assert.equal(reconcileExtractions(normalizeCanonicalData(explicit), typed, explicit).medications[0].dosage.status, 'UNCLEAR');
+});
+
+test('nonempty model values labelled MISSING remain reviewable rather than failing later confirmation', () => {
+  const normalized = normalizeCanonicalData({ patient: { name: { value: 'Synthetic Patient', status: 'MISSING', evidence: '' }, age: { value: '', status: 'FOUND', evidence: '' } } });
+  assert.equal(normalized.patient.name.value, 'Synthetic Patient');
+  assert.equal(normalized.patient.name.status, 'UNCLEAR');
+  assert.equal(normalized.patient.age.status, 'MISSING');
+  assert.equal(validateSourceEvidence(normalized, 'Patient: Synthetic Patient').data.patient.name.status, 'UNCLEAR');
+});
+
+test('medication evidence can include its adjacent section heading without losing local dose support', () => {
+  const source = 'Medications:\nAcetaminophen 500 mg twice daily for 3 days.';
+  const quote = 'Medications: Acetaminophen 500 mg twice daily for 3 days.';
+  const input = { ...canonical(), medications: [{ name: field('Acetaminophen', 'FOUND', quote), dosage: field('500 mg', 'FOUND', quote), frequency: field('twice daily', 'FOUND', quote), duration: field('3 days', 'FOUND', quote), instructions: field() }] };
+  const checked = validateSourceEvidence(input, source).data.medications[0];
+  assert.equal(checked.name.status, 'FOUND'); assert.equal(checked.dosage.status, 'FOUND');
+  assert.equal(checked.frequency.status, 'FOUND'); assert.equal(checked.duration.status, 'FOUND');
+  input.medications[0].dosage = field('900 mg', 'FOUND', quote + ' Otherdrug 900 mg.');
+  assert.equal(validateSourceEvidence(input, source + '\nOtherdrug 900 mg.').data.medications[0].dosage.status, 'UNCLEAR');
+});
+
+test('dose spacing is equivalent but different microgram and milligram units are not', () => {
+  const input = { ...canonical(), medications: [{ name: field('Acetaminophen'), dosage: field('500 mg', 'FOUND', 'Acetaminophen 500mg daily'), frequency: field('daily'), duration: field(), instructions: field() }] };
+  assert.equal(validateSourceEvidence(input, 'Acetaminophen 500mg daily').data.medications[0].dosage.status, 'FOUND');
+  input.medications[0].dosage = field('500 mcg', 'FOUND', 'Acetaminophen 500mg daily');
+  assert.equal(validateSourceEvidence(input, 'Acetaminophen 500mg daily').data.medications[0].dosage.status, 'UNCLEAR');
+});
+
+test('source matching preserves inequality direction in medication hold conditions', () => {
+  const source = 'Cefuroxime 500 mg daily. Hold if systolic BP > 100.';
+  const input = { ...canonical(), medications: [{ name: field('Cefuroxime'), dosage: field('500 mg'), frequency: field('daily'), duration: field(), instructions: field('Hold if systolic BP < 100', 'FOUND', source) }] };
+  assert.equal(validateSourceEvidence(input, source).data.medications[0].instructions.status, 'UNCLEAR');
+  input.medications[0].instructions = field('Hold if systolic BP ≥ 100', 'FOUND', source.replace('> 100', '>= 100'));
+  assert.equal(validateSourceEvidence(input, source.replace('> 100', '>= 100')).data.medications[0].instructions.status, 'FOUND');
+  assert.equal(validateSourceEvidence(input, source.replace('> 100', '<= 100')).data.medications[0].instructions.status, 'UNCLEAR');
+});
+
+test('opposing source role labels cannot validate medication, allergy or follow-up assertions', () => {
+  const input = { ...canonical(), medications: [{ name: field('Synthetic condition A'), dosage: field(), frequency: field(), duration: field(), instructions: field() }], allergies: [field('Synthetic Patient')], followUpAppointments: [{ provider: field('Dr. Example'), date: field(), time: field(), location: field(), instructions: field() }] };
+  const source = 'Patient Name: Synthetic Patient\nDiagnosis: Synthetic condition A\nAttending physician: Dr. Example';
+  const checked = validateSourceEvidence(input, source).data;
+  assert.equal(checked.medications[0].name.status, 'UNCLEAR');
+  assert.equal(checked.allergies[0].status, 'UNCLEAR');
+  assert.equal(checked.followUpAppointments[0].provider.status, 'UNCLEAR');
+});
+
+test('uncertain values can be explicitly reviewed unchanged without automatic promotion', () => {
+  let reviewed = 0;
+  const element = ReviewFieldStatus({ status: 'UNCLEAR', label: 'patient name', onReview: () => { reviewed++; } });
+  assert.equal(reviewed, 0);
+  const button = element.props.children[1];
+  assert.equal(button.props['aria-label'], 'Confirm patient name against original source');
+  button.props.onClick();
+  assert.equal(reviewed, 1);
+  const missing = renderToStaticMarkup(React.createElement(ReviewFieldStatus, { status: 'MISSING', label: 'age', onReview: () => { reviewed++; } }));
+  assert.doesNotMatch(missing, /Mark reviewed/);
+  const data = structuredClone(mockApprovedDoc.verifiedData!); data.patient.name.status = 'UNCLEAR';
+  const html = renderToStaticMarkup(React.createElement(Step2Verify, { extractedData: data, clinicianName: 'synthetic-reviewer', onVerifyComplete: () => {}, onDirtyChange: () => {} }));
+  assert.match(html, /Confirm patient name against original source/);
+  assert.equal(data.patient.name.status, 'UNCLEAR');
 });
 
 test('source-supported additional notes survive normalization, evidence and UI mapping', async () => {

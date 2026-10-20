@@ -1,5 +1,7 @@
 # Clinical evaluation protocol
 
+> Audit snapshot from commit aa63a40. The subsequent Qwen schema/status and verification-control investigation is recorded in [the follow-up report](audit/qwen-schema-fix.md). Previous model scores below describe prompt v2, not the revised v7 two-read protocol.
+
 ## Purpose, governance and limits
 
 This framework measures software behavior against versioned synthetic labels. It does not establish clinical validity, professional endorsement, regulatory compliance or suitability for unsupervised use. No real patient documents or live clinical cloud requests are used. Human clinical review has not occurred.

@@ -146,10 +146,14 @@ All API routes except `/api/health` require the same HTTP Basic credentials as t
 - [Formal project report](docs/project-report.md)
 - [Current findings](docs/audit/architecture-security-review.md), [roadmap](docs/audit/remediation-roadmap.md), [final verification](docs/audit/final-verification-report.md), and [resumable progress](docs/audit/PROGRESS.md)
 
-The synthetic evaluation is not a clinical validation. Conservative parsing retains malformed/missing model certainty as UNCLEAR; the final 31-case run had 83.97% strict value agreement but only 39.66% value-and-status agreement. These are author-labelled synthetic scores, with substantive omissions and manual review still required. See the protocol for denominators and limitations. Matching source text cannot establish clinical correctness or recover an omitted fact.
+The synthetic evaluation is not a clinical validation. The earlier prompt-v2 31-case run had 83.97% strict value agreement but only 39.66% value-and-status agreement. The subsequent [Qwen schema/status fix and its verification](docs/audit/qwen-schema-fix.md) uses constrained local output and retains genuine uncertainty. The latest 31-case development run measured 84.81% value-only and 68.78% value/status agreement, with 25 missing predicted fields. These are author-labelled synthetic scores, with substantive omissions and manual review still required. See the protocol for denominators and limitations. Matching source text cannot establish clinical correctness or recover an omitted fact.
 
 Medication evidence/audit rules conservatively use line/semicolon clauses; wrapped/combined or stopped/historical instructions may need manual reconciliation. Missing allergies remain not provided. Downloads include all eight reviewed report sections and do not invent a discharge date. The UI reports a download request, not confirmed completion.
 
 Older saved audits need a fresh save/re-audit and clinician review before approval/export under the new audit policy. Existing records and history are preserved. Long clinical PDF fields now paginate rather than overflowing a page.
 
 The [earlier audit](docs/AUDIT_REPORT.md) is historical; current findings and executed checks are in the reports above.
+
+The Qwen badge refreshes automatically. LOADS ON FIRST USE means local weights are available but not yet initialized; LOADING, EXTRACTING and READY reflect actual server state. Extraction uses the localhost API and local Qwen, with no external extraction API/fallback. In verification, Mark reviewed confirms one unchanged UNCLEAR value after you compare it with the original source.
+
+The extraction protocol retains the original local proposals and reconciles a second schema-constrained local read. Unmatched/conflicting proposals and explicit uncertainty remain reviewable. Both reads run in the same local Qwen engine; source matching and model agreement do not establish clinical correctness.
