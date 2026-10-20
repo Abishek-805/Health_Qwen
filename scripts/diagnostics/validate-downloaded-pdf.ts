@@ -3,7 +3,7 @@
  * Takes the exact file Chrome created in C:\Users\ashek\Downloads,
  * checks the %PDF- magic bytes, then pdf-parses the clinical content.
  *
- * Usage: npx tsx scratch/validate-downloaded-pdf.ts "<absolute file path>"
+ * Usage: npx tsx scripts/diagnostics/validate-downloaded-pdf.ts "<absolute file path>"
  */
 import fs from 'fs';
 import { createRequire } from 'module';

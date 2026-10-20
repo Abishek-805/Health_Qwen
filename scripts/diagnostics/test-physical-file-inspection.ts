@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { generateApprovedDischargePdf, verifyPdfBinary } from '../server/services/serverPdfGenerator';
-import { DischargeDocument } from '../src/types/discharge';
+import { generateApprovedDischargePdf, verifyPdfBinary } from '../../server/services/serverPdfGenerator';
+import { DischargeDocument } from '../../src/types/discharge';
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const PDFParse = require('pdf-parse');

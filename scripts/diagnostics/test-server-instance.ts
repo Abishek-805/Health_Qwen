@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { createRequire } from 'module';
-import { apiRouter } from '../server/routes/api.js';
+import { apiRouter } from '../../server/routes/api.js';
 
 const require = createRequire(import.meta.url);
 const PDFParse = require('pdf-parse');

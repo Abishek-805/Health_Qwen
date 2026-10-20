@@ -3,9 +3,9 @@
  * repository via the real POST /api/discharge-documents endpoint.
  * Used to prepare the real-browser Step 6 download test.
  *
- * Usage: npx tsx scratch/seed-approved-doc.ts
+ * Usage: npx tsx scripts/diagnostics/seed-approved-doc.ts
  */
-import { mockApprovedDoc } from '../server/tests/fixtures/pdfTestDocument';
+import { mockApprovedDoc } from '../../server/tests/fixtures/pdfTestDocument';
 
 const BASE = 'http://localhost:3000';
 

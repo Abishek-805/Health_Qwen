@@ -1,12 +1,12 @@
 {
-  "name": "react-example",
+  "name": "healthcare-discharge-instructions-generator",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "tsx watch server.ts",
-    "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
-    "start": "node dist/server.cjs",
+    "build": "vite build && esbuild server.ts --bundle --platform=node --format=esm --packages=external --sourcemap --outfile=dist/server.js",
+    "start": "node dist/server.js",
     "clean": "node -e \"fs.rmSync('dist', { recursive: true, force: true })\"",
     "download-model": "tsx server/scripts/download-model.ts",
     "lint": "tsc --noEmit",

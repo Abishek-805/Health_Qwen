@@ -5,9 +5,9 @@
  * Does NOT import the generator directly — every request travels through
  * the actual Express process exactly like the browser's form POST.
  *
- * Usage: npx tsx scratch/test-live-pdf-chain.ts
+ * Usage: npx tsx scripts/diagnostics/test-live-pdf-chain.ts
  */
-import { mockApprovedDoc, mockCriticalDoc } from '../server/tests/fixtures/pdfTestDocument';
+import { mockApprovedDoc, mockCriticalDoc } from '../../server/tests/fixtures/pdfTestDocument';
 
 const BASE = 'http://localhost:3000';
 

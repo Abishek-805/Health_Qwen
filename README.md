@@ -1,285 +1,137 @@
 # Healthcare Discharge Instructions Generator
 
-An intelligent healthcare application designed to process clinical discharge documentation, extract authoritative patient data, run hybrid AI clinical safety audits, and generate clear, structured, multilingual discharge instructions.
+Local Qwen extraction, clinician verification, English discharge handouts, rule-based safety checks, and server-generated PDF downloads. React 19 + TypeScript + Vite + Express + node-llama-cpp.
 
-## 1. Project Overview
+This is a prototype. Records and settings are held in memory and disappear when the server stops or restarts. The API has no authentication, and approval metadata can be supplied by clients. Use synthetic data in an isolated development environment. See the [full audit](docs/AUDIT_REPORT.md) for unresolved findings.
 
-The **Healthcare Discharge Instructions Generator** transforms raw medical discharge summaries (PDF or plain text) into validated, user-friendly discharge instructions. It combines cloud-based Google Gemini models (`gemini-3.6-flash`) for clinical extraction and safety auditing with optional local GGUF model execution (`Qwen2.5-1.5B`) via `node-llama-cpp`.
+## Quick start on Windows
 
-### Key Features
-- **PDF & Text Extraction**: Parses uploaded clinical PDFs using `pdf-parse` and optical character recognition (`tesseract.js` / optional PaddleOCR).
-- **Hybrid AI Audit**: Cross-checks generated instructions against source clinical text for hallucinations or omitted critical care instructions.
-- **Multilingual Support**: Generates instructions in English, Spanish, and other supported languages.
-- **Offline / Edge Support**: Supports local GGUF quantized models (`Qwen2.5-1.5B-Instruct-Q4_K_M.gguf`) for private, offline clinical data extraction.
-- **PDF Generation**: Renders formatted patient discharge instruction PDFs directly via `jspdf` and server-side PDF generators.
+Install Node.js 22.3+ (Node 24.19.0 was tested), npm, and Git. Local inference uses CPU or a supported GPU; native build tools may be needed if a compatible node-llama-cpp binary is unavailable.
 
----
-
-## 2. Architecture
-
-```
-[ Client Interface (React 19 + Vite + Tailwind CSS) ]
-                         │
-                         ▼
-[ Express API Server (server.ts / tsx watch) ]
-    │                      │                      │
-    ▼                      ▼                      ▼
-[ Document Source ]   [ Extraction ]         [ AI Audit ]
-  - pdf-parse           - Gemini API           - Hybrid Validator
-  - Tesseract.js        - Node Llama C++       - Evidence Matcher
-  - (Optional Python)     (Qwen2.5 GGUF)
-```
-
----
-
-## 3. Prerequisites
-
-### Required Prerequisites
-- **Node.js**: v18.0.0 or higher (v20+ recommended)
-- **npm**: v9.0.0 or higher
-- **Git**: For cloning the repository
-
-### Optional / Recommended Prerequisites
-- **Gemini API Key**: Required for online AI extraction & hybrid auditing (free tier available at [Google AI Studio](https://aistudio.google.com/)).
-- **C/C++ Build Tools**: (Windows Build Tools / `build-essential` on Linux) Optional for compiling native `node-llama-cpp` bindings if running the local GGUF extraction engine.
-- **Python**: v3.9+ (Optional — only required if using the PaddleOCR fallback engine).
-
----
-
-## 4. Clone Repository
-
-### Windows PowerShell
 ```powershell
-git clone https://github.com/your-org/healthcare-discharge-instructions-generator.git
-cd healthcare-discharge-instructions-generator
-```
-
-### Linux / macOS
-```bash
-git clone https://github.com/your-org/healthcare-discharge-instructions-generator.git
-cd healthcare-discharge-instructions-generator
-```
-
----
-
-## 5. Dependency Installation
-
-To ensure exact, reproducible dependency installations across machines, use `npm ci` rather than `npm install`:
-
-### Windows PowerShell & Linux/macOS
-```bash
+git clone https://github.com/Abishek-805/Health_Qwen.git
+cd Health_Qwen
 npm ci
-```
-
----
-
-## 6. Python Environment Setup (Optional)
-
-> [!NOTE]
-> Python is **optional**. The system uses `tesseract.js` for OCR by default. Python is only invoked if you explicitly choose to run the optional PaddleOCR fallback.
-
-If you wish to enable PaddleOCR support:
-
-### Windows PowerShell
-```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install paddleocr paddlepaddle
-```
-
-### Linux / macOS
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install paddleocr paddlepaddle
-```
-
----
-
-## 7. Node.js Setup
-
-The project uses Node.js with Vite and TypeScript (`tsx`).
-
-- **Runtime Engine**: Express server on Node.js (`server.ts`).
-- **Frontend Stack**: React 19, TypeScript, Vite, Tailwind CSS v4, Lucide React, Framer Motion.
-- **Dependency Management**: Dependencies are fully declared in `package.json` and locked in `package-lock.json`.
-
-To verify your Node environment setup:
-```bash
-node -v
-npm -v
-```
-
----
-
-## 8. Environment Configuration
-
-1. Copy `.env.example` to create your local `.env` configuration file:
-
-### Windows PowerShell
-```powershell
 Copy-Item .env.example .env
-```
-
-### Linux / macOS
-```bash
-cp .env.example .env
-```
-
-2. Open `.env` and configure your environment variables:
-
-| Variable | Type | Required / Optional | Description | Default / Example |
-| :--- | :--- | :--- | :--- | :--- |
-| `GEMINI_API_KEY` | String | **Required** for Cloud AI | Google Gemini API Key | `AIzaSy...` |
-| `GEMINI_MODEL` | String | Optional | Cloud Gemini model identifier | `gemini-3.6-flash` |
-| `PORT` | Number | Optional | Express server HTTP port | `3000` |
-| `NODE_ENV` | String | Optional | Environment mode (`development` / `production`) | `development` |
-| `APP_URL` | String | Optional | App base URL | `http://localhost:3000` |
-
-> [!IMPORTANT]
-> Never commit your real `GEMINI_API_KEY` or `.env` file to Git.
-
----
-
-## 9. External Services & Model Files Setup
-
-### Model Files (Local GGUF Model)
-- **Engine**: `node-llama-cpp`
-- **Model**: `Qwen2.5-1.5B-Instruct-Q4_K_M.gguf` (~1.1 GB)
-- **Expected Directory**: `models/qwen2.5-1.5b/`
-- **Status**: **Optional** (used for local offline clinical data extraction). If not present, the system defaults to Gemini Cloud API.
-
-To download the local GGUF model automatically:
-```bash
 npm run download-model
+.\start.bat
 ```
 
----
+Open [localhost:3000](http://localhost:3000), or the port configured in `.env`.
 
-## 10. Backend Startup
+- Double-click `start.bat` to launch the combined frontend/API in the background. It creates `.env` from the example only if missing; it does not install dependencies or download models.
+- Double-click `stop.bat` to stop the process tree launched by this checkout. **Stopping clears all in-memory records.** Download needed PDFs first.
+- Logs and process identity live in ignored `.runtime/`. Duplicate starts are ignored. Stale process IDs are checked against their creation time before stopping anything.
+- Startup checks that the process survives three seconds; inspect logs and `/api/health` to confirm readiness. The script prints the default URL; custom ports are read by the server from `.env`.
+- The launcher uses `tsx server.ts` without backend watch mode to avoid resetting records on source edits. Stop and start after backend changes. Manually launched servers must be stopped in their own terminal.
 
-In development mode, `npm run dev` starts the Express API server with Vite middleware attached.
+For terminal development on Windows, macOS, or Linux, run `npm run dev` from the repository root. This uses backend watch mode, so backend edits can reset data.
 
-### Windows PowerShell & Linux/macOS
-```bash
-npm run dev
+## Actual processing flow
+
+1. Upload PDF, JPG, PNG, or paste clinical text.
+2. Digital PDF parsing or local Tesseract OCR extracts source text. The service also automatically attempts Python PaddleOCR for images and chooses the better result; missing PaddleOCR falls back to Tesseract. Python is optional, and its absence may print a traceback.
+3. Local Qwen2.5-1.5B GGUF extraction structures the clinical data; source evidence checks downgrade unsupported values. **There is no cloud fallback when the local model is missing.**
+4. A clinician verifies extracted data. English instructions use deterministic local templates.
+5. Rule-based checks produce an audit across 18 named categories. Optional Gemini semantic checks can supplement them.
+6. The review/approval UI and Express PDF endpoint create an attachment. Current gates check metadata, version, and critical status, but do not establish trusted clinician identity or protect against forged client payloads.
+
+The UI currently generates English instructions. Existing Hindi/Tamil cloud paths do not establish validated multilingual support. Local extraction and default English generation/auditing need no Gemini key; section regeneration and the Gemini status endpoint can contact Google if a key is configured. OCR assets may need network access on first use.
+
+## Configuration
+
+Copy `.env.example` once; keep real keys out of Git. Existing `.env` files are preserved by the launcher.
+
+| Variable | Behavior |
+| --- | --- |
+| `PORT` | Shared HTTP port, default `3000` |
+| `NODE_ENV` | `development` uses Vite middleware; `production` serves built assets |
+| `GEMINI_API_KEY` / `GEMINI_API_KEY_BACKUP` | Optional cloud credentials; backup support varies by operation |
+| `GEMINI_MODEL` | Cloud model identifier; code defaults to `gemini-3.6-flash`, whose availability was not verified |
+| `GEMINI_GENERATION_ENABLED` | Default false; enables existing non-English cloud generation paths. English still uses templates |
+| `GEMINI_AUDIT_ENABLED` | Default false; enables optional cloud semantic auditing |
+| `DISABLE_HMR` | `true` disables frontend HMR/watch behavior |
+
+`APP_URL` is not consumed by the current code. Cloud operations send supplied clinical content to Google. Review the service configuration before using any sensitive content.
+
+The model downloader stores `models/qwen2.5-1.5b/Qwen2.5-1.5B-Instruct-Q4_K_M.gguf` (about 1.12 GB). This directory is ignored. Missing model errors are resolved with `npm run download-model`. The downloader currently checks file size rather than a cryptographic checksum.
+
+## Commands and verification
+
+```powershell
+npm run lint           # TypeScript checking (not a style linter)
+npm test               # Seven top-level tests, including OCR and real local-model inference
+npm run build          # Frontend assets + ESM server in dist/server.js
+npx tsx server/tests/test-server-pdf-endpoint.ts
+npx tsx server/tests/test-step6-architecture.ts
+npx tsx server/tests/test-ui-integration-flow.ts
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/test-lifecycle.ps1
 ```
 
-The backend server will start at `http://localhost:3000`.
+`npm test` needs the model and OCR runtime and may be slow. It does not run every standalone test. The lifecycle check uses port 3301 and requires the managed app to be stopped. Archived manual diagnostics under `scripts/diagnostics/` are opt-in: some seed documents into a live server or write PDFs to the user's Downloads folder.
 
----
+For production-mode smoke testing:
 
-## 11. Frontend Startup
-
-Because Vite is integrated into the Express server during development, running `npm run dev` serves both the backend API and the React frontend on `http://localhost:3000`.
-
-Open your browser and navigate to:
-```text
-http://localhost:3000
-```
-
----
-
-## 12. Docker Setup (Optional)
-
-If containerization is desired:
-
-```bash
-docker build -t healthcare-discharge-generator .
-docker run -p 3000:3000 --env-file .env healthcare-discharge-generator
-```
-
----
-
-## 13. API Endpoints
-
-| Method | Endpoint | Description | Payload / Query |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api/health` | Health check endpoint | N/A |
-| `GET` | `/api/ai-status` | Checks Gemini API connectivity | N/A |
-| `GET` | `/api/extraction-status` | Checks Qwen GGUF local model status | N/A |
-| `POST` | `/api/extract` | Upload PDF & extract clinical structured data | Form Data (`file`) |
-| `POST` | `/api/generate` | Generate patient discharge instructions | JSON (`extractedData`) |
-| `POST` | `/api/audit` | Run hybrid safety audit on generated instructions | JSON (`doc`, `instructions`) |
-| `POST` | `/api/generate-approved-pdf` | Download formatted discharge PDF | Form Data / JSON (`payload`) |
-
----
-
-## 14. Testing
-
-Run the full automated test suite (includes clinical extraction benchmarks, PDF parser tests, and API integration tests):
-
-### Windows PowerShell & Linux/macOS
-```bash
-npm test
-```
-
-To run TypeScript type checks:
-```bash
-npm run lint
-```
-
----
-
-## 15. Production Build
-
-To build the application for production deployment:
-
-### Step 1: Compile Vite assets and Server Bundle
-```bash
+```powershell
 npm run build
+$env:NODE_ENV = 'production'
+npm start
 ```
 
-This creates static frontend assets in `dist/` and the bundled Express server in `dist/server.cjs`.
+On macOS/Linux use `NODE_ENV=production npm start`. Run from the project root. A production build is not a security or clinical-readiness certification. There is currently no Dockerfile, deployment pipeline, or persistent database.
 
-### Step 2: Start Production Server
-```bash
-npm run start
-```
+## API map
 
----
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/api/health` | Process health; does not verify model readiness |
+| GET | `/api/extraction-status` | Local model/device status |
+| GET | `/api/ai-status` | Optional Gemini connectivity call |
+| GET / PUT | `/api/settings` | In-memory settings |
+| GET | `/api/patients` | In-memory patient index |
+| POST | `/api/extract-discharge` | Multipart `file` or `textInput` |
+| POST | `/api/generate-instructions` | `verifiedData`, optional language/version/document ID |
+| POST | `/api/audit-instructions`, `/api/validate-instructions` | `verifiedData`, `report`, optional document ID |
+| POST | `/api/regenerate-section` | Cloud section regeneration |
+| GET / POST | `/api/discharge-documents` | List/create documents; `/api/documents` is an alias |
+| GET / PUT | `/api/discharge-documents/:id` | Read/update document; `/api/documents/:id` is an alias |
+| POST | `/api/approve-instructions`, `/api/approve-document` | Reviewer metadata and document ID |
+| POST | `/api/precheck-approved-pdf` | JSON validation before download |
+| POST | `/api/generate-approved-pdf` | PDF attachment; JSON, form `payload`, or document ID |
 
-## 16. Troubleshooting
-
-- **`GEMINI_API_KEY` missing**: Ensure `.env` is created from `.env.example` and contains a valid API key from AI Studio.
-- **Port 3000 already in use**: Change `PORT=3001` in your `.env` file.
-- **Local GGUF model load error**: Run `npm run download-model` to ensure `Qwen2.5-1.5B-Instruct-Q4_K_M.gguf` is completely downloaded in `models/qwen2.5-1.5b/`.
-- **Module build error**: Run `npm run clean` then `npm ci`.
-
----
-
-## 17. Project Structure
+## Repository layout
 
 ```text
-healthcare-discharge-instructions-generator/
-├── .env.example              # Configuration template
-├── .gitignore                # Git ignore patterns
-├── README.md                 # Complete documentation
-├── index.html                # HTML entry point
-├── package.json              # Node.js dependencies and scripts
-├── package-lock.json         # Locked dependency tree
-├── server.ts                 # Express + Vite server entry point
-├── tsconfig.json             # TypeScript configuration
-├── vite.config.ts            # Vite bundler configuration
-│
-├── models/                   # Local GGUF models (git ignored)
-│   └── qwen2.5-1.5b/
-│       └── Qwen2.5-1.5B-Instruct-Q4_K_M.gguf
-│
-├── server/                   # Backend Express Services & Routes
-│   ├── ai/                   # Gemini AI integration
-│   ├── audit/                # Hybrid clinical audit engine
-│   ├── repositories/         # Storage / document repository
-│   ├── routes/               # Express API router (/api/...)
-│   ├── scripts/              # Helper scripts (download-model.ts)
-│   ├── services/             # Extraction, PDF, and OCR services
-│   └── tests/                # Test suites & benchmark scripts
-│
-└── src/                      # React 19 Frontend
-    ├── App.tsx               # Main React Application
-    ├── main.tsx              # React mounting entry point
-    ├── components/           # UI components
-    ├── pages/                # Page layouts & workflows
-    ├── types/                # TypeScript type definitions
-    └── utils/                # Frontend helper functions
+start.bat / stop.bat       Windows launch controls
+scripts/app.ps1           Shared lifecycle implementation
+scripts/test-lifecycle.ps1 Windows lifecycle regression checks
+scripts/diagnostics/       Archived manual PDF/server diagnostics
+src/                      React UI, shared types, browser utilities
+server.ts                 Express + Vite/static server entry
+server/ai/                Optional Gemini operations and local templates
+server/audit/             Deterministic and semantic checks
+server/repositories/      In-memory stores
+server/routes/            API routes
+server/services/          OCR, extraction, validation, PDF rendering
+server/scripts/           Model downloader
+server/tests/             Tests, benchmarks, synthetic fixtures
+docs/AUDIT_REPORT.md      Current audit and remediation priorities
+docs/dependency-audit.json Raw npm audit snapshot
+docs/CLEANUP_MANIFEST.md  Historical cleanup record (not a current guarantee)
+docs/screenshots/         Historical UI screenshots
+models/                   Ignored local model weights
+.runtime/                 Ignored process identity and logs
+dist/                     Ignored generated build output
+eng.traineddata           Existing local English OCR data
 ```
+
+npm and `package-lock.json` are the canonical dependency workflow; the obsolete Bun lockfile was removed. Root Vite/TypeScript/HTML entry files stay in their conventional locations.
+
+## Troubleshooting
+
+- Missing `tsx`: run `npm ci` from the root.
+- Missing GGUF: run `npm run download-model`; the page can load without it, extraction cannot.
+- Port in use: stop this checkout with `stop.bat`, or choose another `PORT`. The stop script never kills an arbitrary port owner.
+- Startup failure: read `.runtime/stderr.log` and `.runtime/stdout.log`. The server listens on all IPv4 interfaces (`0.0.0.0`), so isolate it with host/network controls.
+- Records disappeared: restarts, crashes, and watch-mode reloads clear the repository; there is no database recovery.
+- Production ESM error from `server.cjs`: rebuild and use the updated `npm start` (`dist/server.js`).
