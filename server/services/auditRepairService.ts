@@ -13,19 +13,29 @@ const sections: Partial<Record<AuditFinding['category'], keyof ReportSections>> 
 };
 const signature = (finding: AuditFinding) => JSON.stringify([finding.category, finding.title, finding.verifiedSourceText]);
 
-// shortcut: merge only identical structured schedules and exact schedule-as-name echoes; other variants need review.
+// shortcut: merge exact duplicates or literal schedule echoes, including misplaced timing phrases; other variants need review.
 function removeMedicationEchoes(data: AuthoritativeDischargeData) {
   const clean = (value: string) => value.trim().toLowerCase().replace(/\s+/g, ' ').replace(/\.$/, '');
   const fields = ['dosage', 'frequency', 'duration', 'instructions'] as const;
   const medications = data.medications.filter((med, index, all) => !all.some((other, otherIndex) => {
     if (other === med || med.overallStatus !== 'FOUND' || other.overallStatus !== 'FOUND') return false;
-    const scheduleEcho = !!other.dosage && !!other.frequency && !!other.duration && !medicationReviewContext.test(med.name)
-      && clean(med.name) === clean(`${other.name} ${other.dosage} ${other.frequency} for ${other.duration}`);
+    const scheduleEcho = !!other.dosage && !!other.frequency && !medicationReviewContext.test(med.name)
+      && clean(med.name) === clean(`${other.name} ${other.dosage} ${other.frequency}${other.duration ? ` for ${other.duration}` : ''}`);
+    const timing = clean(other.frequency).match(/\b(?:before|after|at|with)\s+.+$/)?.[0] || (clean(other.frequency) === 'nightly' ? 'night' : '');
+    const repeatedTiming = scheduleEcho && !!timing && !other.duration.trim() && other.durationStatus === 'MISSING'
+      && med.durationStatus === 'FOUND' && clean(med.duration) === timing;
+    const splitFrequency = repeatedTiming && med.frequencyStatus === other.frequencyStatus
+      && clean(other.frequency) === `${clean(med.frequency)} ${timing}`;
     const repeatedDuration = scheduleEcho && [
       `${clean(other.duration)} for ${clean(other.duration)}`,
       `${clean(other.duration)}. for ${clean(other.duration)}`,
     ].includes(clean(med.duration));
-    if (!fields.every(key => (clean(med[key]) === clean(other[key]) || (key === 'duration' && repeatedDuration)) && med[`${key}Status`] === other[`${key}Status`])) return false;
+    const repeatedInstruction = scheduleEcho && !other.instructions.trim() && other.instructionsStatus === 'MISSING'
+      && med.instructionsStatus === 'FOUND' && ((!!other.duration && clean(med.instructions) === `for ${clean(other.duration)}`)
+        || (repeatedTiming && clean(med.instructions) === timing));
+    if (!fields.every(key => (key === 'instructions' && repeatedInstruction)
+      || (key === 'duration' && repeatedTiming) || (key === 'frequency' && splitFrequency)
+      || ((clean(med[key]) === clean(other[key]) || (key === 'duration' && repeatedDuration)) && med[`${key}Status`] === other[`${key}Status`]))) return false;
     if (clean(med.name) === clean(other.name)) return otherIndex < index;
     return scheduleEcho;
   }));

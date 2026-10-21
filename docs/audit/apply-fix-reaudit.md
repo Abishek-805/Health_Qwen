@@ -18,6 +18,10 @@ The follow-up now removes exact duplicates or schedule-as-name echoes when their
 
 ## Verification
 
+Follow-up from the actual saved screenshot fields: the full-schedule duplicate stored `for 3 days` in its instruction field, while the retained row already had `3 days` as duration and an empty instruction. The repair now recognizes this exact redundant instruction only on a matching schedule-name echo. Different durations, added conditions and unique care instructions remain blocked. After successful source/report save, the UI uses the saved audit (not the preview) to advance to Step 5 when no critical finding remains and cloud audit is not unavailable. It never assigns final clinical approval automatically. The exact fields are covered by regression and saved-record HTTP tests.
+
+The same saved examples also contained two other full-schedule duplicates. One split `once daily before breakfast` into frequency `once daily` plus duration/instruction `before breakfast`; another stored `night` as duration/instruction for a matching `nightly` schedule. These exact timing echoes are recognized only when the retained course duration is missing and the full duplicate name matches the retained name, dose and schedule. Genuine finite course lengths and unique instructions are not discarded. Direct repair previews against both affected saved examples removed three duplicates each and left zero critical findings; the checks did not rewrite the examples. No source patient identifiers were copied into tests or this report.
+
 - Fast regressions cover conflicting/negated report repair, matching duplicate removal, screenshot repeated-duration echoes, conflicting-source refusal, ordering, idempotence, preservation of unrelated reviewed text and input immutability, correct warning-section restoration and patient metadata repair.
 - 18 PDF checks and approved-PDF architecture regression passed.
 - TypeScript and production build passed.

@@ -77,7 +77,9 @@ try {
   }
   assert.equal((await request('/api/settings', undefined, { headers: { Origin: 'null' } })).status, 403);
   const verifiedData = structuredClone(mockApprovedDoc.verifiedData!);
-  verifiedData.medications.push({ ...verifiedData.medications[0], id: 'schedule-echo', name: 'Cefuroxime 500 mg twice daily for 5 days' });
+  verifiedData.medications[0].instructions = '';
+  verifiedData.medications[0].instructionsStatus = 'MISSING';
+  verifiedData.medications.push({ ...verifiedData.medications[0], id: 'schedule-echo', name: 'Cefuroxime 500 mg twice daily for 5 days', instructions: 'for 5 days', instructionsStatus: 'FOUND' });
   const generatedResponse = await request('/api/generate-instructions', { verifiedData }); assert.equal(generatedResponse.status, 200);
   const generatedReport = (await generatedResponse.json()).report;
   const saveResponse = await request('/api/discharge-documents', { verifiedData, generatedReport, hospitalInfo: { name: 'Synthetic evaluation workspace', department: 'Synthetic' } });

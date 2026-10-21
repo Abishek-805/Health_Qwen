@@ -70,6 +70,8 @@ Appointments also preserve optional providerStatus/dateStatus/timeStatus/locatio
 
 ## Save and version
 
+Repair also recognizes an extra instruction that exactly repeats `for <verified duration>` on a matching schedule-name duplicate when the retained row has no instruction. Timing phrases already present in the retained frequency can be recognized when misplaced as duration/instruction in the duplicate (for example `before breakfast`, or `night` matching `nightly`), provided no actual course duration is discarded and the full schedule-name matches. It does not drop unique instructions or conflicting durations. After the normal save returns its authoritative audit, Step 4 automatically opens Step 5 if no critical finding remains and a requested cloud audit is not unavailable. Advancing to review does not approve the document.
+
 `POST /discharge-documents`: JSON `{verifiedData,generatedReport,hospitalInfo}` only. `hospitalInfo` accepts required name and department. Returns 201 with the saved `DischargeDocument`. The backend assigns a UUID, version 1, fresh audit and timestamps; no client approval/audit/history properties are accepted.
 
 `PUT /discharge-documents/:id`: same body, plus `If-Match: <currentVersion>` header. Missing/wrong version returns 409. Returns 200 with the next saved version, recomputed audit and cleared approval. The repository rechecks the version within a transaction; overlapping same-version writes cannot both succeed. Every write appends an event. Critical audits are saved as NEEDS_REVIEW; other saved reports are AUDITED and still require acknowledgment.

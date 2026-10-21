@@ -329,6 +329,45 @@ test('repair handles the screenshot schedule-name and repeated duration echo wit
   assert.match(result.report.sections.medicationInstructions, /Take with meals/);
 });
 
+test('repair removes the saved screenshot duplicate whose extra instruction only repeats its duration', async () => {
+  const data = structuredClone(mockApprovedDoc.verifiedData!);
+  const med = { ...data.medications[0], name: 'Acetaminophen', duration: '3 days', instructions: '', instructionsStatus: 'MISSING' as const };
+  data.medications = [med, { ...med, id: 'echo', name: 'Acetaminophen 500 mg twice daily for 3 days', instructions: 'for 3 days', instructionsStatus: 'FOUND' }];
+  const report = await generateReport(data);
+  const before = structuredClone({ data, report });
+  const finding = runDeterministicAudit(data, report).find(item => item.id === 'det-med-context-0')!;
+  const result = await repairAuditFinding(data, report, finding);
+  assert.equal(result.removedDuplicateCount, 1);
+  assert.deepEqual(result.verifiedData.medications, [med]);
+  assert.equal(result.auditResult.findings.some(item => item.category === 'MEDICATIONS'), false);
+  assert.deepEqual({ data, report }, before);
+  for (const instructions of ['for 5 days', 'for 3 days then stop if dizzy', 'Take with food']) {
+    data.medications[1].instructions = instructions;
+    await assert.rejects(() => repairAuditFinding(data, report, finding), /No report change was saved|No change was saved/);
+  }
+});
+
+test('one repair clears the saved examples with timing phrases misplaced as duration without inventing a course length', async () => {
+  const data = structuredClone(mockApprovedDoc.verifiedData!);
+  const base = { ...data.medications[0], instructions: '', instructionsStatus: 'MISSING' as const, duration: '', durationStatus: 'MISSING' as const };
+  const beforeBreakfast = { ...base, id: 'base-a', name: 'SyntheticA', dosage: '20 mg', frequency: 'once daily before breakfast' };
+  const nightly = { ...base, id: 'base-b', name: 'SyntheticB', dosage: '40 mg', frequency: 'nightly' };
+  const echoA = { ...beforeBreakfast, id: 'echo-a', name: 'SyntheticA 20 mg once daily before breakfast', frequency: 'once daily', duration: 'before breakfast', durationStatus: 'FOUND' as const, instructions: 'before breakfast', instructionsStatus: 'FOUND' as const };
+  const echoB = { ...nightly, id: 'echo-b', name: 'SyntheticB 40 mg nightly', duration: 'night', durationStatus: 'FOUND' as const, instructions: 'night', instructionsStatus: 'FOUND' as const };
+  data.medications = [beforeBreakfast, nightly, echoA, echoB];
+  const report = await generateReport(data);
+  const finding = runDeterministicAudit(data, report).find(item => item.id === 'det-med-context-0')!;
+  const result = await repairAuditFinding(data, report, finding);
+  assert.equal(result.removedDuplicateCount, 2);
+  assert.deepEqual(result.verifiedData.medications, [beforeBreakfast, nightly]);
+  assert.equal(result.auditResult.findings.some(item => item.status === 'CRITICAL_ISSUE'), false);
+  assert.match(result.report.sections.medicationInstructions, /Duration: Not specified/);
+  for (const change of [{ duration: '5 days' }, { frequency: 'twice daily' }, { instructions: 'after breakfast' }]) {
+    data.medications = [beforeBreakfast, { ...echoA, ...change }];
+    await assert.rejects(() => repairAuditFinding(data, report, finding), /No report change was saved|No change was saved/);
+  }
+});
+
 test('repair restores omitted warnings to the correct section and fixes patient metadata', async () => {
   const data = structuredClone(mockApprovedDoc.verifiedData!);
   data.warningSigns = [{ value: 'Synthetic warning symptom', status: 'FOUND' }];

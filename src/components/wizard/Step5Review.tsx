@@ -22,7 +22,7 @@ interface Props {
   verifiedData: AuthoritativeDischargeData;
   report: GeneratedReport;
   auditResult: HybridAuditResult;
-  onUpdateReport: (updatedReport: GeneratedReport, reAuditResult?: HybridAuditResult) => Promise<void>;
+  onUpdateReport: (updatedReport: GeneratedReport, reAuditResult?: HybridAuditResult) => Promise<HybridAuditResult | void>;
   onProceedToApproval: () => void;
   onDirtyChange: (dirty: boolean) => void;
   isLoading: boolean;

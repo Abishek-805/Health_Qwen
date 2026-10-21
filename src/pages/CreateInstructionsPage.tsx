@@ -156,6 +156,7 @@ export const CreateInstructionsPage: React.FC<Props> = ({
     setExtractedData(saved.verifiedData!);
     setDocument(saved); setGeneratedReport(saved.generatedReport!); setAuditResult(saved.auditResult!);
     onDocumentCreated(saved);
+    return saved.auditResult;
   };
 
   const effectiveDocument = !hasUnsavedSourceEdits && generatedReport && auditResult ? document : null;
