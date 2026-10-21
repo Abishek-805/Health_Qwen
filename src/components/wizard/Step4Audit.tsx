@@ -16,15 +16,14 @@ import {
   HybridAuditResult,
   AuditFinding,
   AuditCategory,
-  AuthoritativeDischargeData,
   GeneratedReport,
-  ReportSections,
 } from '../../types/discharge';
 import { StatusBadge } from '../common/StatusBadge';
 
 interface Props {
   auditResult: HybridAuditResult;
-  verifiedData?: AuthoritativeDischargeData;
+  documentId?: string;
+  onProceedToSource?: () => void;
   report?: GeneratedReport;
   onUpdateReport?: (updatedReport: GeneratedReport, reAuditResult?: HybridAuditResult) => Promise<void>;
   onProceedToReview: () => void;
@@ -52,75 +51,10 @@ const CATEGORY_NAMES: Record<AuditCategory, string> = {
   WORDING: '18. Language & Reading Grade Level',
 };
 
-const CATEGORY_TO_SECTION: Record<AuditCategory, keyof ReportSections> = {
-  PATIENT_INFORMATION: 'summary',
-  DIAGNOSIS: 'diagnosisAndProcedures',
-  PROCEDURES: 'diagnosisAndProcedures',
-  MEDICATIONS: 'medicationInstructions',
-  ALLERGIES: 'medicationInstructions',
-  FOLLOW_UP: 'followUpAppointments',
-  OMISSIONS: 'summary',
-  NUMERIC_VALUES: 'medicationInstructions',
-  DATES: 'followUpAppointments',
-  DIET: 'dietAndActivity',
-  ACTIVITY_RESTRICTIONS: 'dietAndActivity',
-  WOUND_PROCEDURE_CARE: 'woundCareAndHygiene',
-  WARNING_SIGNS: 'warningSignsAndEmergency',
-  EMERGENCY_INSTRUCTIONS: 'warningSignsAndEmergency',
-  UNSUPPORTED_CLAIMS: 'summary',
-  CONTRADICTIONS: 'summary',
-  MEDICAL_MEANING: 'summary',
-  WORDING: 'summary',
-};
-
-function getFactToAppend(finding: AuditFinding, verifiedData?: AuthoritativeDischargeData): string {
-  if (finding.verifiedSourceText && finding.verifiedSourceText !== 'N/A') {
-    return finding.verifiedSourceText;
-  }
-
-  if (!verifiedData) return finding.title;
-
-  switch (finding.category) {
-    case 'PATIENT_INFORMATION':
-      return `Patient ID: ${verifiedData.patient.patientId.value}`;
-    case 'ALLERGIES':
-      if (verifiedData.allergies && verifiedData.allergies.length > 0) {
-        const list = verifiedData.allergies
-          .map((a) => (typeof a === 'string' ? a : a.value))
-          .join(', ');
-        return `⚠️ DRUG ALLERGIES: ${list}`;
-      }
-      return 'Allergy information not provided';
-    case 'MEDICATIONS':
-    case 'NUMERIC_VALUES':
-      if (verifiedData.medications && verifiedData.medications.length > 0) {
-        return `Medication Schedule: ${verifiedData.medications
-          .map((m) => `${m.name} ${m.dosage || ''} ${m.frequency || ''}`)
-          .join('; ')}`;
-      }
-      break;
-    case 'FOLLOW_UP':
-    case 'DATES':
-      if (verifiedData.followUp && verifiedData.followUp.length > 0) {
-        return `Follow-Up: ${verifiedData.followUp
-          .map((f) => `${f.provider} on ${f.date} @ ${f.time}`)
-          .join('; ')}`;
-      }
-      break;
-    case 'DIAGNOSIS':
-    case 'PROCEDURES':
-      if (verifiedData.diagnosis && verifiedData.diagnosis.length > 0) {
-        return `Diagnosis: ${verifiedData.diagnosis.map((d) => d.value).join(', ')}`;
-      }
-      break;
-  }
-
-  return finding.title;
-}
-
 export const Step4Audit: React.FC<Props> = ({
   auditResult,
-  verifiedData,
+  documentId,
+  onProceedToSource,
   report,
   onUpdateReport,
   onProceedToReview,
@@ -129,6 +63,7 @@ export const Step4Audit: React.FC<Props> = ({
   const [selectedFinding, setSelectedFinding] = useState<AuditFinding | null>(null);
   const [isApplyingFix, setIsApplyingFix] = useState<boolean>(false);
   const [fixError, setFixError] = useState<string | null>(null);
+  const [fixNotice, setFixNotice] = useState<string | null>(null);
 
   const findings = auditResult?.findings || [];
   const isCritical = auditResult?.overallStatus === 'CRITICAL_ISSUE';
@@ -140,58 +75,29 @@ export const Step4Audit: React.FC<Props> = ({
   const passCount = auditResult?.passCount ?? Math.max(0, 18 - criticalCount - warningCount);
 
   const handleApplyFixAndReAudit = async () => {
-    if (!report || !onUpdateReport || !selectedFinding) return;
-
+    if (!documentId || !report || !onUpdateReport || !selectedFinding) return;
     setIsApplyingFix(true);
     setFixError(null);
-
-    const targetSecKey = CATEGORY_TO_SECTION[selectedFinding.category];
-    const existingText = report.sections[targetSecKey] || '';
-    const factToAppend = getFactToAppend(selectedFinding, verifiedData);
-
-    const updatedSecText = existingText
-      ? `${existingText}\n\n- ${factToAppend}`
-      : factToAppend;
-
-    const newVersion = (report.version || 1) + 1;
-    const updatedReport: GeneratedReport = {
-      ...report,
-      version: newVersion,
-      sections: {
-        ...report.sections,
-        [targetSecKey]: updatedSecText,
-      },
-      generatedAt: new Date().toISOString(),
-    };
-
+    setFixNotice(null);
     try {
-      const res = await fetch('/api/audit-instructions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          verifiedData: verifiedData || {},
-          report: updatedReport,
-        }),
+      const res = await fetch('/api/repair-instructions', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentId, reportVersion: report.version, findingId: selectedFinding.id }),
       });
-
-      if (!res.ok) {
-        throw new Error('Re-audit request failed. Please check backend service status.');
-      }
-
-      const reAuditResult = (await res.json()) as HybridAuditResult;
-      // Update report & audit result in parent state, close modal, STAY ON STEP 4
-      await onUpdateReport(updatedReport, reAuditResult);
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Repair failed. No report change was saved.');
+      // The normal save owns the new version, authoritative audit and approval invalidation.
+      await onUpdateReport(result.report);
       setSelectedFinding(null);
+      setFixNotice('Affected section rebuilt from verified data, saved and re-audited. Review the current findings before approval.');
     } catch (err: any) {
-      console.error('Apply fix error:', err);
-      setFixError(err.message || 'Failed to apply automatic fix & re-audit.');
-    } finally {
-      setIsApplyingFix(false);
-    }
+      setFixError(err.message || 'Repair or save failed. Reload the current saved report before retrying.');
+    } finally { setIsApplyingFix(false); }
   };
 
   return (
     <div className="mx-auto max-w-5xl p-6">
+      {fixNotice && <div role="status" className="mb-4 rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-900">{fixNotice}</div>}
       {/* Verdict Header */}
       <div
         className={`mb-6 rounded-2xl p-6 border shadow-sm transition-all ${
@@ -391,7 +297,7 @@ export const Step4Audit: React.FC<Props> = ({
 
             {/* Fix Execution Error Banner */}
             {fixError && (
-              <div className="mb-4 rounded-xl bg-rose-50 border border-rose-300 p-3 text-xs font-bold text-rose-800 flex items-center gap-2">
+              <div role="alert" className="mb-4 rounded-xl bg-rose-50 border border-rose-300 p-3 text-xs font-bold text-rose-800 flex items-center gap-2">
                 <XCircle className="h-4 w-4 text-rose-600 shrink-0" />
                 <span>{fixError}</span>
               </div>
@@ -399,9 +305,11 @@ export const Step4Audit: React.FC<Props> = ({
 
             {/* Single Prominent Action Button: APPLY FIX & RE-AUDIT */}
             <div className="space-y-3 border-t border-[#F5F5F0] pt-6">
+              <p className="text-xs text-[#665F54]">Rebuilds the affected section from verified data and saves it only if this finding clears. Review the result before approval.</p>
+              {onProceedToSource && <button type="button" disabled={isApplyingFix} onClick={() => { setSelectedFinding(null); onProceedToSource(); }} className="text-sm font-semibold text-[#5A5A40] underline">Edit verified source (Step 2)</button>}
               <button
                 type="button"
-                disabled={isApplyingFix || !report || !onUpdateReport}
+                disabled={isApplyingFix || !documentId || !report || !onUpdateReport}
                 onClick={handleApplyFixAndReAudit}
                 className="w-full flex items-center justify-center gap-3 rounded-2xl bg-[#5A5A40] px-8 py-4 text-sm font-bold text-white shadow-md hover:bg-[#4A4A34] active:scale-[0.99] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider"
               >

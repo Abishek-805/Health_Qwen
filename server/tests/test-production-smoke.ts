@@ -81,6 +81,24 @@ try {
   const generatedReport = (await generatedResponse.json()).report;
   const saveResponse = await request('/api/discharge-documents', { verifiedData, generatedReport, hospitalInfo: { name: 'Synthetic evaluation workspace', department: 'Synthetic' } });
   assert.equal(saveResponse.status, 201); let doc = await saveResponse.json();
+  const damaged = structuredClone(doc.generatedReport);
+  damaged.sections.medicationInstructions += '\nDo not take Cefuroxime 1000 mg once daily.';
+  let update = await request('/api/discharge-documents/' + doc.id, { verifiedData, generatedReport: damaged, hospitalInfo: { name: 'Synthetic Hospital', department: 'General' } }, { method: 'PUT', headers: { 'If-Match': String(doc.currentVersion) } });
+  assert.equal(update.status, 200); doc = await update.json();
+  const finding = doc.auditResult.findings.find((item: { id: string }) => item.id === 'det-med-context-0');
+  assert.ok(finding);
+  const staleRepair = await request('/api/repair-instructions', { documentId: doc.id, reportVersion: doc.currentVersion - 1, findingId: finding.id });
+  assert.equal(staleRepair.status, 409);
+  const repair = await request('/api/repair-instructions', { documentId: doc.id, reportVersion: doc.currentVersion, findingId: finding.id });
+  assert.equal(repair.status, 200); const preview = await repair.json();
+  assert.equal(preview.auditResult.findings.some((item: { id: string }) => item.id === finding.id), false);
+  const unchanged = await (await request('/api/discharge-documents/' + doc.id)).json();
+  assert.equal(unchanged.currentVersion, doc.currentVersion);
+  assert.match(unchanged.generatedReport.sections.medicationInstructions, /1000 mg/);
+  update = await request('/api/discharge-documents/' + doc.id, { verifiedData, generatedReport: preview.report, hospitalInfo: { name: 'Synthetic Hospital', department: 'General' } }, { method: 'PUT', headers: { 'If-Match': String(doc.currentVersion) } });
+  assert.equal(update.status, 200); doc = await update.json();
+  assert.notEqual(doc.approvalStatus, 'APPROVED');
+  assert.equal(doc.auditResult.findings.some((item: { id: string }) => item.id === finding.id), false);
   const approval = await request('/api/approve-instructions', { documentId: doc.id, reportVersion: doc.currentVersion, clinicianReviewConfirmed: true });
   assert.equal(approval.status, 200); doc = (await approval.json()).document; assert.equal(doc.approvedBy.name, username);
   const pre = await request('/api/precheck-approved-pdf', { documentId: doc.id }); assert.equal(pre.status, 200);
@@ -90,7 +108,7 @@ try {
   try { const { text } = await parser.getText(); assert.match(text, /Cefuroxime/); assert.match(text, /CLN-70428/); } finally { await parser.destroy(); }
   await stop(); await start();
   assert.equal((await (await request('/api/discharge-documents/' + doc.id)).json()).approvalStatus, 'APPROVED');
-  console.log(`PASS: ${development ? 'development middleware' : 'real npm start forces production assets'}; private-file denial, auth, origin, generation/save, approval, native form PDF and restart persistence.`);
+  console.log(`PASS: ${development ? 'development middleware' : 'real npm start forces production assets'}; private-file denial, auth, origin, generation/save, source-backed repair preview/save and stale-version rejection, approval, native form PDF and restart persistence.`);
   if (process.argv.includes('--serve')) {
     console.log(`Synthetic-only browser fixture server ready at ${base}; interrupt this test to stop.`);
     await new Promise(() => {});

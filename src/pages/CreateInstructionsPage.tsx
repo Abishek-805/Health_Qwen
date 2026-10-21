@@ -201,8 +201,9 @@ export const CreateInstructionsPage: React.FC<Props> = ({
 
           {currentStep === 4 && auditResult && (
             <Step4Audit
+              documentId={document?.id}
+              onProceedToSource={() => setCurrentStep(2)}
               auditResult={auditResult}
-              verifiedData={verifiedData || undefined}
               report={generatedReport || undefined}
               onUpdateReport={handleUpdateReport}
               onProceedToReview={() => {

@@ -10,6 +10,7 @@ import { executeHybridAudit } from '../audit/hybridAudit';
 import { AUDIT_POLICY_VERSION } from '../audit/deterministicAudit';
 import { documentRepository } from '../repositories/documentRepository';
 import { generateApprovedDischargePdf } from '../services/serverPdfGenerator';
+import { repairAuditFinding } from '../services/auditRepairService';
 import { authenticate, clinicianIdentity } from '../security';
 import { HttpError, object, text, verified, report, hospital, sectionKeys } from '../validation';
 import type { DischargeDocument, GeneratedReport } from '../../src/types/discharge';
@@ -88,6 +89,17 @@ function requireDocument(id: unknown): DischargeDocument {
   if (!doc) throw new HttpError(404, 'Document not found.');
   return doc;
 }
+apiRouter.post('/repair-instructions', route(async (req, res) => {
+  const input = object(req.body);
+  if (Object.keys(input).some(key => !['documentId', 'reportVersion', 'findingId'].includes(key))) throw new HttpError(400, 'Send only the saved documentId, reportVersion and findingId.');
+  const doc = requireDocument(input.documentId);
+  if (input.reportVersion !== doc.currentVersion || savesInProgress.has(doc.id)) throw new HttpError(409, 'Document changed or is being updated. Reload the current saved report before repairing.');
+  if (!doc.generatedReport || !doc.verifiedData || !doc.auditResult || doc.auditResult.reportVersion !== doc.currentVersion) throw new HttpError(400, 'A current saved report and audit are required.');
+  const findingId = text(input.findingId, 200, true);
+  const finding = doc.auditResult.findings.find(item => item.id === findingId);
+  if (!finding) throw new HttpError(404, 'Finding is no longer present in the saved audit. Reload the report.');
+  res.json(await repairAuditFinding(verified(doc.verifiedData), doc.generatedReport, finding));
+}));
 const writable = ['verifiedData', 'generatedReport', 'hospitalInfo'];
 const savesInProgress = new Set<string>();
 async function saveDocument(req: Request, existing?: DischargeDocument) {

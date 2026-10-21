@@ -66,6 +66,8 @@ Appointments also preserve optional providerStatus/dateStatus/timeStatus/locatio
 
 `AuditResult` contains policyVersion, reportVersion, findings, categorySummaries, overallStatus, recommendation, coverageNote, cloudAuditStatus and counts. An unavailable requested cloud audit is not PASS and blocks subsequent approval. A preview audit does not update the saved record; save the report to recompute its authoritative audit.
 
+`POST /repair-instructions`: JSON `{documentId,reportVersion,findingId}` only. Loads the saved verified fields/report/audit, rejects a stale or updating version with 409, and rebuilds the affected supported section using local templates. Patient-identity repairs also correct report identity metadata. Other report sections are preserved. It returns `{report,auditResult}` without persisting or assigning a new version. If the selected finding remains after rebuilding, or no deterministic section repair is supported, it returns 422 with manual/source-review guidance instead of claiming success. The UI then saves a successful preview through the normal versioned PUT, which recalculates the authoritative audit and clears approval. No clinical source row is automatically deleted or reconciled by this operation.
+
 ## Save and version
 
 `POST /discharge-documents`: JSON `{verifiedData,generatedReport,hospitalInfo}` only. `hospitalInfo` accepts required name and department. Returns 201 with the saved `DischargeDocument`. The backend assigns a UUID, version 1, fresh audit and timestamps; no client approval/audit/history properties are accepted.

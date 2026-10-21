@@ -14,6 +14,7 @@ import { Step2Verify, createBlankFollowUp, editFollowUp, ReviewFieldStatus, mark
 import { sourceNavigationBlocked } from '../../src/pages/CreateInstructionsPage';
 import { mapCanonicalToStructured } from '../services/clinicalExtractionService';
 import { Step5Review } from '../../src/components/wizard/Step5Review';
+import { repairAuditFinding } from '../services/auditRepairService';
 
 process.env.CLOUD_PROCESSING_ENABLED = 'false';
 process.env.GEMINI_AUDIT_ENABLED = 'false';
@@ -247,6 +248,51 @@ test('negation and conflicting repeated medication schedules block approval', as
     const report = await generateReport(data); report.sections.medicationInstructions = text;
     assert.ok(runDeterministicAudit(data, report).some(f => f.status === 'CRITICAL_ISSUE'));
   }
+});
+
+test('audit repair replaces conflicting medication prose instead of appending another name', async () => {
+  const data = structuredClone(mockApprovedDoc.verifiedData!);
+  const report = await generateReport(data);
+  report.sections.medicationInstructions = 'Do not take Cefuroxime 1000 mg once daily.\n- Cefuroxime\n- Cefuroxime';
+  report.sections.additionalInstructions += '\nPreserve this reviewed note.';
+  const before = structuredClone(report);
+  const finding = runDeterministicAudit(data, report).find(item => item.id === 'det-med-context-0')!;
+  assert.ok(finding);
+  const repaired = await repairAuditFinding(data, report, finding);
+  assert.doesNotMatch(repaired.report.sections.medicationInstructions, /1000 mg|Do not take/);
+  assert.match(repaired.report.sections.medicationInstructions, /500 mg/);
+  assert.equal(repaired.auditResult.findings.some(item => item.category === 'MEDICATIONS' && item.status === 'CRITICAL_ISSUE'), false);
+  assert.equal(repaired.report.sections.additionalInstructions, before.sections.additionalInstructions);
+  assert.equal(repaired.report.id, before.id);
+  assert.equal(repaired.report.version, before.version);
+  assert.deepEqual(report, before);
+});
+
+test('repair refuses unresolved duplicate verified medication rows without changing source or report', async () => {
+  const data = structuredClone(mockApprovedDoc.verifiedData!);
+  data.medications.push({ ...data.medications[0], id: 'duplicate-schedule', name: `${data.medications[0].name} 500 mg twice daily for 5 days` });
+  const report = await generateReport(data);
+  report.sections.medicationInstructions += '\n- Cefuroxime\n- Cefuroxime';
+  const before = structuredClone({ data, report });
+  const finding = runDeterministicAudit(data, report).find(item => item.id === 'det-med-context-0')!;
+  assert.ok(finding);
+  await assert.rejects(() => repairAuditFinding(data, report, finding), /Step 2.*duplicate medication rows/);
+  assert.deepEqual({ data, report }, before);
+});
+
+test('repair restores omitted warnings to the correct section and fixes patient metadata', async () => {
+  const data = structuredClone(mockApprovedDoc.verifiedData!);
+  data.warningSigns = [{ value: 'Synthetic warning symptom', status: 'FOUND' }];
+  const report = await generateReport(data);
+  report.sections.warningSignsAndEmergency = '### Warning Signs';
+  const warning = runDeterministicAudit(data, report).find(item => item.id === 'det-omission-warning')!;
+  assert.ok(warning);
+  const repaired = await repairAuditFinding(data, report, warning);
+  assert.equal(repaired.auditResult.findings.some(item => item.id === warning.id), false);
+  assert.equal(repaired.report.sections.summary, report.sections.summary);
+  report.patientId = 'WRONG-SYNTHETIC-ID';
+  const identity = runDeterministicAudit(data, report).find(item => item.id === 'det-pid-1')!;
+  assert.equal((await repairAuditFinding(data, report, identity)).report.patientId, data.patient.patientId.value);
 });
 
 test('verified course-stop instructions are preserved without a false new-negation block', async () => {
