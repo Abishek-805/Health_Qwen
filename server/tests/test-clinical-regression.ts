@@ -268,7 +268,7 @@ test('audit repair replaces conflicting medication prose instead of appending an
   assert.deepEqual(report, before);
 });
 
-test('repair refuses unresolved duplicate verified medication rows without changing source or report', async () => {
+test('repair removes matching schedule-as-name duplicates without changing inputs', async () => {
   const data = structuredClone(mockApprovedDoc.verifiedData!);
   data.medications.push({ ...data.medications[0], id: 'duplicate-schedule', name: `${data.medications[0].name} 500 mg twice daily for 5 days` });
   const report = await generateReport(data);
@@ -276,8 +276,57 @@ test('repair refuses unresolved duplicate verified medication rows without chang
   const before = structuredClone({ data, report });
   const finding = runDeterministicAudit(data, report).find(item => item.id === 'det-med-context-0')!;
   assert.ok(finding);
-  await assert.rejects(() => repairAuditFinding(data, report, finding), /Step 2.*duplicate medication rows/);
+  const result = await repairAuditFinding(data, report, finding);
+  assert.equal(result.removedDuplicateCount, 1);
+  assert.deepEqual(result.verifiedData.medications, [data.medications[0]]);
+  assert.equal(result.auditResult.findings.some(item => item.category === 'MEDICATIONS'), false);
+  assert.equal(result.report.sections.medicationInstructions.split('**Cefuroxime**').length - 1, 1);
+  assert.equal(result.report.sections.summary, report.sections.summary);
   assert.deepEqual({ data, report }, before);
+});
+
+test('medication repair refuses conflicting dose, frequency, duration, instructions and combination names', async () => {
+  for (const change of [
+    { dosage: '1000 mg' }, { frequency: 'once daily' }, { duration: '10 days' },
+    { instructions: 'Do not take this medication' }, { name: 'Cefuroxime with SyntheticOther' },
+  ]) {
+    const data = structuredClone(mockApprovedDoc.verifiedData!);
+    data.medications.push({ ...data.medications[0], id: 'conflict', name: 'Cefuroxime 500 mg twice daily for 5 days', ...change });
+    const report = await generateReport(data);
+    const before = structuredClone({ data, report });
+    const finding = runDeterministicAudit(data, report).find(item => item.id === 'det-med-context-0')!;
+    assert.ok(finding);
+    await assert.rejects(() => repairAuditFinding(data, report, finding), /No report change was saved|No change was saved/);
+    assert.deepEqual({ data, report }, before);
+  }
+});
+
+test('medication repair handles duplicate order and repeated exact copies idempotently', async () => {
+  const data = structuredClone(mockApprovedDoc.verifiedData!);
+  const med = data.medications[0];
+  data.medications = [{ ...med, id: 'echo', name: 'Cefuroxime 500 mg twice daily for 5 days' }, med, { ...med, id: 'copy' }];
+  const report = await generateReport(data);
+  const finding = runDeterministicAudit(data, report).find(item => item.category === 'MEDICATIONS')!;
+  const result = await repairAuditFinding(data, report, finding);
+  assert.equal(result.removedDuplicateCount, 2);
+  assert.deepEqual(result.verifiedData.medications, [med]);
+  const repeated = await repairAuditFinding(result.verifiedData, result.report, finding);
+  assert.equal(repeated.removedDuplicateCount, 0);
+  assert.deepEqual(repeated.verifiedData, result.verifiedData);
+});
+
+test('repair handles the screenshot schedule-name and repeated duration echo without losing instructions', async () => {
+  const data = structuredClone(mockApprovedDoc.verifiedData!);
+  const med = { ...data.medications[0], name: 'Acetaminophen', duration: '3 days.' };
+  data.medications = [med, { ...med, id: 'echo', name: 'Acetaminophen 500 mg twice daily for 3 days', duration: '3 days. for 3 days' }];
+  const report = await generateReport(data);
+  const finding = runDeterministicAudit(data, report).find(item => item.id === 'det-med-context-0')!;
+  assert.ok(finding);
+  const result = await repairAuditFinding(data, report, finding);
+  assert.deepEqual(result.verifiedData.medications, [med]);
+  assert.equal(result.removedDuplicateCount, 1);
+  assert.equal(result.auditResult.findings.some(item => item.category === 'MEDICATIONS'), false);
+  assert.match(result.report.sections.medicationInstructions, /Take with meals/);
 });
 
 test('repair restores omitted warnings to the correct section and fixes patient metadata', async () => {

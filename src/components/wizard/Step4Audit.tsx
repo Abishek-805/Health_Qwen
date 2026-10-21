@@ -17,6 +17,7 @@ import {
   AuditFinding,
   AuditCategory,
   GeneratedReport,
+  AuthoritativeDischargeData,
 } from '../../types/discharge';
 import { StatusBadge } from '../common/StatusBadge';
 
@@ -25,7 +26,7 @@ interface Props {
   documentId?: string;
   onProceedToSource?: () => void;
   report?: GeneratedReport;
-  onUpdateReport?: (updatedReport: GeneratedReport, reAuditResult?: HybridAuditResult) => Promise<void>;
+  onUpdateReport?: (updatedReport: GeneratedReport, reAuditResult?: HybridAuditResult, repairedData?: AuthoritativeDischargeData) => Promise<void>;
   onProceedToReview: () => void;
   onProceedToApproval?: () => void;
 }
@@ -87,9 +88,9 @@ export const Step4Audit: React.FC<Props> = ({
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || 'Repair failed. No report change was saved.');
       // The normal save owns the new version, authoritative audit and approval invalidation.
-      await onUpdateReport(result.report);
+      await onUpdateReport(result.report, undefined, result.verifiedData);
       setSelectedFinding(null);
-      setFixNotice('Affected section rebuilt from verified data, saved and re-audited. Review the current findings before approval.');
+      setFixNotice(`Affected section rebuilt, saved and re-audited.${result.removedDuplicateCount ? ` Removed ${result.removedDuplicateCount} matching duplicate medication row(s); the saved source fields were updated too.` : ''} Review the current findings before approval.`);
     } catch (err: any) {
       setFixError(err.message || 'Repair or save failed. Reload the current saved report before retrying.');
     } finally { setIsApplyingFix(false); }
@@ -305,7 +306,7 @@ export const Step4Audit: React.FC<Props> = ({
 
             {/* Single Prominent Action Button: APPLY FIX & RE-AUDIT */}
             <div className="space-y-3 border-t border-[#F5F5F0] pt-6">
-              <p className="text-xs text-[#665F54]">Rebuilds the affected section from verified data and saves it only if this finding clears. Review the result before approval.</p>
+              <p className="text-xs text-[#665F54]">Rebuilds the affected section and removes matching duplicate medication rows automatically. Saves the corrected fields and report together only if the finding clears. Conflicting prescriptions still need review.</p>
               {onProceedToSource && <button type="button" disabled={isApplyingFix} onClick={() => { setSelectedFinding(null); onProceedToSource(); }} className="text-sm font-semibold text-[#5A5A40] underline">Edit verified source (Step 2)</button>}
               <button
                 type="button"

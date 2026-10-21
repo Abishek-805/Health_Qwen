@@ -77,6 +77,7 @@ try {
   }
   assert.equal((await request('/api/settings', undefined, { headers: { Origin: 'null' } })).status, 403);
   const verifiedData = structuredClone(mockApprovedDoc.verifiedData!);
+  verifiedData.medications.push({ ...verifiedData.medications[0], id: 'schedule-echo', name: 'Cefuroxime 500 mg twice daily for 5 days' });
   const generatedResponse = await request('/api/generate-instructions', { verifiedData }); assert.equal(generatedResponse.status, 200);
   const generatedReport = (await generatedResponse.json()).report;
   const saveResponse = await request('/api/discharge-documents', { verifiedData, generatedReport, hospitalInfo: { name: 'Synthetic evaluation workspace', department: 'Synthetic' } });
@@ -91,13 +92,18 @@ try {
   assert.equal(staleRepair.status, 409);
   const repair = await request('/api/repair-instructions', { documentId: doc.id, reportVersion: doc.currentVersion, findingId: finding.id });
   assert.equal(repair.status, 200); const preview = await repair.json();
+  assert.equal(preview.removedDuplicateCount, 1);
+  assert.equal(preview.verifiedData.medications.length, 1);
   assert.equal(preview.auditResult.findings.some((item: { id: string }) => item.id === finding.id), false);
   const unchanged = await (await request('/api/discharge-documents/' + doc.id)).json();
   assert.equal(unchanged.currentVersion, doc.currentVersion);
+  assert.equal(unchanged.verifiedData.medications.length, 2);
   assert.match(unchanged.generatedReport.sections.medicationInstructions, /1000 mg/);
-  update = await request('/api/discharge-documents/' + doc.id, { verifiedData, generatedReport: preview.report, hospitalInfo: { name: 'Synthetic Hospital', department: 'General' } }, { method: 'PUT', headers: { 'If-Match': String(doc.currentVersion) } });
+  update = await request('/api/discharge-documents/' + doc.id, { verifiedData: preview.verifiedData, generatedReport: preview.report, hospitalInfo: { name: 'Synthetic Hospital', department: 'General' } }, { method: 'PUT', headers: { 'If-Match': String(doc.currentVersion) } });
   assert.equal(update.status, 200); doc = await update.json();
   assert.notEqual(doc.approvalStatus, 'APPROVED');
+  assert.equal(doc.verifiedData.medications.length, 1);
+  assert.equal(doc.currentVersion, unchanged.currentVersion + 1);
   assert.equal(doc.auditResult.findings.some((item: { id: string }) => item.id === finding.id), false);
   const approval = await request('/api/approve-instructions', { documentId: doc.id, reportVersion: doc.currentVersion, clinicianReviewConfirmed: true });
   assert.equal(approval.status, 200); doc = (await approval.json()).document; assert.equal(doc.approvedBy.name, username);
@@ -108,6 +114,7 @@ try {
   try { const { text } = await parser.getText(); assert.match(text, /Cefuroxime/); assert.match(text, /CLN-70428/); } finally { await parser.destroy(); }
   await stop(); await start();
   assert.equal((await (await request('/api/discharge-documents/' + doc.id)).json()).approvalStatus, 'APPROVED');
+  assert.equal((await (await request('/api/discharge-documents/' + doc.id)).json()).verifiedData.medications.length, 1);
   console.log(`PASS: ${development ? 'development middleware' : 'real npm start forces production assets'}; private-file denial, auth, origin, generation/save, source-backed repair preview/save and stale-version rejection, approval, native form PDF and restart persistence.`);
   if (process.argv.includes('--serve')) {
     console.log(`Synthetic-only browser fixture server ready at ${base}; interrupt this test to stop.`);

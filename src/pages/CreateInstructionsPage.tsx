@@ -144,14 +144,16 @@ export const CreateInstructionsPage: React.FC<Props> = ({
     } finally { setIsLoading(false); }
   };
 
-  const handleUpdateReport = async (updatedReport: GeneratedReport, _audit?: HybridAuditResult) => {
+  const handleUpdateReport = async (updatedReport: GeneratedReport, _audit?: HybridAuditResult, repairedData?: AuthoritativeDischargeData) => {
     if (!document || !verifiedData) throw new Error('Save the document before editing.');
     const res = await fetch('/api/discharge-documents/' + document.id, {
       method: 'PUT', headers: { 'Content-Type': 'application/json', 'If-Match': String(document.currentVersion) },
-      body: JSON.stringify({ verifiedData, generatedReport: updatedReport, hospitalInfo }),
+      body: JSON.stringify({ verifiedData: repairedData || verifiedData, generatedReport: updatedReport, hospitalInfo }),
     });
     if (!res.ok) throw new Error((await res.json()).error || 'Document save failed');
     const saved: DischargeDocument = await res.json();
+    setVerifiedData(saved.verifiedData!);
+    setExtractedData(saved.verifiedData!);
     setDocument(saved); setGeneratedReport(saved.generatedReport!); setAuditResult(saved.auditResult!);
     onDocumentCreated(saved);
   };
